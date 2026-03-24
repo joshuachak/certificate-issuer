@@ -17,23 +17,11 @@ CertStudio is a 100% private, local web application designed to automate the gen
 
 ## 🚀 How to Run
 
-Because modern browsers have security restrictions on `file://` URLs, you must run this app using a simple local server to enable PDF processing.
+It's completely serverless! You do not need to install Node.js, Python, or any hosting software.
 
-### Option A: Using Node.js (Recommended)
-1. Open your terminal in this folder.
-2. Run:
-   ```bash
-   npx serve .
-   ```
-3. Open the link provided (usually `http://localhost:3000`).
-
-### Option B: Using Python
-1. Open your terminal in this folder.
-2. Run:
-   ```bash
-   python3 -m http.server 8000
-   ```
-3. Open `http://localhost:8000` in your browser.
+1. Download or clone this repository to your local machine.
+2. Simply double-click the `index.html` file to open it in your default web browser (Chrome, Edge, Safari, etc.).
+3. Start generating certificates!
 
 ## 🛠 Usage Guide
 
