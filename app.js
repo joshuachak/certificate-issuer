@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressText = document.getElementById('progress-text');
     const editorPanel = document.querySelector('.editor-panel');
     const languageSelect = document.getElementById('language-select');
+    
+    // Preview Elements
+    const previewSection = document.getElementById('preview-section');
+    const prevPreviewBtn = document.getElementById('prev-preview-btn');
+    const nextPreviewBtn = document.getElementById('next-preview-btn');
+    const previewIndexText = document.getElementById('preview-index');
 
     // State
     let templateImageWidth = 0;
@@ -39,58 +45,92 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalFileName = "certificate";
     let bgDataURL = null;
     let currentLang = localStorage.getItem('certstudio_lang') || 'en';
+    let currentRecords = [];
+    let currentPreviewIndex = 0;
 
     // --- i18n Logic ---
     function setLanguage(lang) {
         currentLang = lang;
         localStorage.setItem('certstudio_lang', lang);
-        
-        // Handle RTL for Arabic
-        if (lang === 'ar') {
-            document.documentElement.dir = 'rtl';
-            document.body.classList.add('rtl');
-        } else {
-            document.documentElement.dir = 'ltr';
-            document.body.classList.remove('rtl');
-        }
-
+        if (lang === 'ar') { document.documentElement.dir = 'rtl'; document.body.classList.add('rtl'); } 
+        else { document.documentElement.dir = 'ltr'; document.body.classList.remove('rtl'); }
         const dict = translations[lang] || translations['en'];
-        
-        // Translate elements with data-i18n
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (dict[key]) {
-                // If it contains an SVG, preserve it
                 const svg = el.querySelector('svg');
-                if (svg) {
-                    el.innerHTML = '';
-                    el.appendChild(svg);
-                    el.appendChild(document.createTextNode(' ' + dict[key]));
-                } else {
-                    el.textContent = dict[key];
-                }
+                if (svg) { el.innerHTML = ''; el.appendChild(svg); el.appendChild(document.createTextNode(' ' + dict[key])); } 
+                else { el.textContent = dict[key]; }
             }
         });
-
-        // Translate placeholders
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const key = el.getAttribute('data-i18n-placeholder');
             if (dict[key]) el.placeholder = dict[key].replace(/\\n/g, '\n');
         });
-
         languageSelect.value = lang;
     }
-
     languageSelect.addEventListener('change', (e) => setLanguage(e.target.value));
-    setLanguage(currentLang); // Initialize
+    setLanguage(currentLang);
 
-    // --- End i18n ---
+    // --- Data Parsing ---
+    async function parseRecords() {
+        let records = [];
+        const isPaste = document.querySelector('.tab-btn[data-tab="tab-text"]').classList.contains('active');
+        if (isPaste) {
+            const val = namesTextarea.value.trim();
+            if (val) val.split('\n').forEach(n => { if (n.trim()) records.push({name: n.trim(), date: '', id: ''}) });
+        } else {
+            const file = dataUpload.files[0];
+            if (file) {
+                await new Promise(res => Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => {
+                    r.data.forEach(row => {
+                        const norm = {}; for (let k in row) norm[k.toLowerCase().trim()] = row[k];
+                        records.push({name: norm['name']||'', date: norm['date']||'', id: norm['issuance number'] || norm['id'] || ''});
+                    });
+                    res();
+                }}));
+            }
+        }
+        currentRecords = records;
+        if (records.length > 0) {
+            previewSection.style.display = 'block';
+            currentPreviewIndex = 0;
+            updatePreview();
+        } else {
+            previewSection.style.display = 'none';
+        }
+        return records;
+    }
 
-    canvas.setWidth(800);
-    canvas.setHeight(600);
-    canvas.renderAll();
+    // Monitor changes to trigger parsing
+    namesTextarea.addEventListener('input', parseRecords);
+    dataUpload.addEventListener('change', parseRecords);
+    tabBtns.forEach(btn => btn.addEventListener('click', () => setTimeout(parseRecords, 100)));
 
-    // Tabs
+    // --- Preview Logic ---
+    function updatePreview() {
+        if (!currentRecords.length) return;
+        const record = currentRecords[currentPreviewIndex];
+        previewIndexText.innerText = `${currentPreviewIndex + 1} / ${currentRecords.length}`;
+        
+        canvas.getObjects().forEach(o => {
+            if (o.customFieldType === 'name') o.set('text', record.name || '[Name]');
+            else if (o.customFieldType === 'date') o.set('text', record.date || '[Date]');
+            else if (o.customFieldType === 'id') o.set('text', record.id || '[ID]');
+        });
+        canvas.renderAll();
+    }
+
+    prevPreviewBtn.addEventListener('click', () => {
+        if (currentPreviewIndex > 0) { currentPreviewIndex--; updatePreview(); }
+    });
+    nextPreviewBtn.addEventListener('click', () => {
+        if (currentPreviewIndex < currentRecords.length - 1) { currentPreviewIndex++; updatePreview(); }
+    });
+
+    // --- Core Editor & Zoom ---
+    canvas.setWidth(800); canvas.setHeight(600); canvas.renderAll();
+
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
@@ -101,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Zoom
     function updateZoom(newZoom) {
         currentZoom = Math.min(Math.max(newZoom, 0.1), 5.0);
         const wrapper = document.getElementById('canvas-wrapper');
@@ -116,10 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     editorPanel.addEventListener('wheel', (e) => {
         if (!templateLoaded) return;
-        if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            updateZoom(currentZoom * Math.pow(1.1, -e.deltaY / 100));
-        }
+        if (e.ctrlKey || e.metaKey) { e.preventDefault(); updateZoom(currentZoom * Math.pow(1.1, -e.deltaY / 100)); }
     }, { passive: false });
 
     if(document.getElementById('zoom-in-btn')) document.getElementById('zoom-in-btn').addEventListener('click', () => updateZoom(currentZoom * 1.2));
@@ -129,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateZoom(Math.min(1, (editorPanel.clientWidth - 100) / templateImageWidth));
     });
 
-    // Center
     if(document.getElementById('center-h-btn')) document.getElementById('center-h-btn').addEventListener('click', () => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set({ left: canvas.width / 2 }); obj.setCoords(); canvas.renderAll(); }
@@ -139,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (obj) { obj.set({ top: canvas.height / 2 }); obj.setCoords(); canvas.renderAll(); }
     });
 
-    // Upload
     templateUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -154,8 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const viewport = page.getViewport({ scale: 2.5 }); 
                     const tempCanvas = document.createElement('canvas');
                     const ctx = tempCanvas.getContext('2d');
-                    tempCanvas.height = viewport.height;
-                    tempCanvas.width = viewport.width;
+                    tempCanvas.height = viewport.height; tempCanvas.width = viewport.width;
                     await page.render({canvasContext: ctx, viewport: viewport}).promise;
                     bgDataURL = tempCanvas.toDataURL('image/jpeg', 0.9);
                     setCanvasBackground(bgDataURL);
@@ -182,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Editor
     function addPlaceholder(field, text) {
         if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
         const textObj = new fabric.Textbox(text, {
@@ -191,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             originX: 'center', originY: 'center', customFieldType: field 
         });
         canvas.add(textObj); canvas.setActiveObject(textObj);
+        updatePreview(); // Sync immediately
     }
     
     if(btnAddName) btnAddName.addEventListener('click', () => addPlaceholder('name', '[Name]'));
@@ -249,16 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 4. Download Template Logic
     if (downloadTemplateBtn) {
         downloadTemplateBtn.addEventListener('click', () => {
             const content = "Name,Date,ID\nJohn Doe,2026-03-23,001\nJane Smith,2026-03-23,002";
-            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-            saveAs(blob, "template.csv");
+            saveAs(new Blob([content], { type: 'text/csv;charset=utf-8;' }), "template.csv");
         });
     }
 
-    // Parallel Worker
+    // --- Generation Logic ---
     async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat) {
         const vCanvas = new fabric.StaticCanvas(null, { width: templateData.width, height: templateData.height });
         return new Promise((resolve) => {
@@ -270,16 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (cfg.customFieldType === 'name') displayText = record.name || "";
                         else if (cfg.customFieldType === 'date') displayText = record.date || "";
                         else if (cfg.customFieldType === 'id') displayText = record.id || "";
-
-                        const { text, ...cleanOptions } = cfg; 
-                        const vText = new fabric.Textbox(displayText, { ...cleanOptions });
-                        vCanvas.add(vText);
+                        const { text, ...cleanOptions } = cfg;
+                        vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
                     });
                     vCanvas.renderAll();
-
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
-
                     if (outputFormat === 'image') {
                         pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.9 }), 'JPEG', 0, 0, templateData.width, templateData.height);
                     } else {
@@ -292,32 +319,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                     }
-                    const data = pdf.output('arraybuffer');
                     vCanvas.dispose();
-                    resolve({ name: record.name, id: record.id, data: data });
+                    resolve({ name: record.name, id: record.id, data: pdf.output('arraybuffer') });
                 });
             });
         });
     }
 
     if(btnGenerate) btnGenerate.addEventListener('click', async () => {
+        const records = await parseRecords();
         if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
-        let records = [];
-        if (document.querySelector('.tab-btn[data-tab="tab-text"]').classList.contains('active')) {
-            const val = namesTextarea.value.trim();
-            if (val) val.split('\n').forEach(n => { if (n.trim()) records.push({name: n.trim(), date: '', id: ''}) });
-        } else {
-            const file = dataUpload.files[0];
-            if (file) {
-                await new Promise(res => Papa.parse(file, { header: true, complete: r => {
-                    r.data.forEach(row => {
-                        const norm = {}; for (let k in row) norm[k.toLowerCase().trim()] = row[k];
-                        records.push({name: norm['name']||'', date: norm['date']||'', id: norm['id']||''});
-                    });
-                    res();
-                }}));
-            }
-        }
         if (!records.length) return alert(translations[currentLang].alert_provide_data);
 
         const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
@@ -330,13 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
 
         const zip = new JSZip();
-        const cpuCores = navigator.hardwareConcurrency || 4;
-        const deviceMemory = navigator.deviceMemory || 4; 
-        let batchSize = Math.min(Math.floor(cpuCores * 1.5), Math.floor(deviceMemory * 3), 20);
-        if (batchSize < 2) batchSize = 2; 
-        
-        console.log(`Performance Tuning: Concurrency set to: ${batchSize}`);
-        
+        const batchSize = Math.min(Math.floor((navigator.hardwareConcurrency || 4) * 1.5), Math.floor((navigator.deviceMemory || 4) * 3), 20);
         let completed = 0;
         const dict = translations[currentLang];
 
@@ -353,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
             progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
         }
 
-        progressText.innerText = dict.zipping;
         saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
         btnGenerate.disabled = false; progressText.innerText = dict.complete;
         setTimeout(() => progressContainer.style.display = 'none', 3000);

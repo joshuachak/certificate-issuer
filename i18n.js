@@ -32,7 +32,11 @@ const translations = {
     zipping: "Zipping files...",
     complete: "Export Complete!",
     alert_upload_template: "Please upload a template first.",
-    alert_provide_data: "Please provide student data."
+    alert_provide_data: "Please provide student data.",
+    preview_title: "Preview Data",
+    prev_btn: "Previous",
+    next_btn: "Next",
+    preview_help: "Cycle through your list to check alignment."
   },
   "zh-TW": {
     app_title: "出Cert神器-零幀出Cert",
@@ -67,7 +71,11 @@ const translations = {
     zipping: "正在打包...",
     complete: "導出完成！",
     alert_upload_template: "請先上傳模板。",
-    alert_provide_data: "請提供學生數據。"
+    alert_provide_data: "請提供學生數據。",
+    preview_title: "數據預覽",
+    prev_btn: "上一個",
+    next_btn: "下一個",
+    preview_help: "循環切換名單以檢查對齊效果。"
   },
   "zh-CN": {
     app_title: "出Cert神器-零帧出Cert",
@@ -102,7 +110,11 @@ const translations = {
     zipping: "正在打包...",
     complete: "导出完成！",
     alert_upload_template: "请先上传模板。",
-    alert_provide_data: "请提供学生数据。"
+    alert_provide_data: "请提供学生数据。",
+    preview_title: "数据预览",
+    prev_btn: "上一个",
+    next_btn: "下一个",
+    preview_help: "循环切换名单以检查对齐效果。"
   },
   ja: {
     app_title: "CertStudio",
@@ -137,7 +149,11 @@ const translations = {
     zipping: "圧縮中...",
     complete: "書き出し完了！",
     alert_upload_template: "まずテンプレートをアップロードしてください。",
-    alert_provide_data: "学生データを入力してください。"
+    alert_provide_data: "学生データを入力してください。",
+    preview_title: "データのプレビュー",
+    prev_btn: "前へ",
+    next_btn: "次へ",
+    preview_help: "リストを切り替えて配置を確認してください。"
   },
   ko: {
     app_title: "CertStudio",
@@ -172,7 +188,11 @@ const translations = {
     zipping: "압축 중...",
     complete: "내보내기 완료!",
     alert_upload_template: "먼저 템플릿을 업로드하세요.",
-    alert_provide_data: "학생 데이터를 제공해 주세요."
+    alert_provide_data: "학생 데이터를 제공해 주세요.",
+    preview_title: "데이터 미리보기",
+    prev_btn: "이전",
+    next_btn: "다음",
+    preview_help: "목록을 순회하며 정렬을 확인하세요."
   },
   id: {
     app_title: "CertStudio",
@@ -207,7 +227,11 @@ const translations = {
     zipping: "Mengompres file...",
     complete: "Ekspor Selesai!",
     alert_upload_template: "Silakan unggah templat terlebih dahulu.",
-    alert_provide_data: "Silakan berikan data siswa."
+    alert_provide_data: "Silakan berikan data siswa.",
+    preview_title: "Pratinjau Data",
+    prev_btn: "Sebelumnya",
+    next_btn: "Berikutnya",
+    preview_help: "Gulir daftar Anda untuk memeriksa penyelarasan."
   },
   ms: {
     app_title: "CertStudio",
@@ -242,7 +266,11 @@ const translations = {
     zipping: "Menzip fail...",
     complete: "Eksport Selesai!",
     alert_upload_template: "Sila muat naik templat terlebih dahulu.",
-    alert_provide_data: "Sila berikan data pelajar."
+    alert_provide_data: "Sila berikan data pelajar.",
+    preview_title: "Pratonton Data",
+    prev_btn: "Sebelumnya",
+    next_btn: "Seterusnya",
+    preview_help: "Semak senarai anda untuk melihat penjajaran."
   },
   th: {
     app_title: "CertStudio",
@@ -277,7 +305,11 @@ const translations = {
     zipping: "กำลังบีบอัดไฟล์...",
     complete: "ส่งออกเสร็จสมบูรณ์!",
     alert_upload_template: "กรุณาอัปโหลดเทมเพลตก่อน",
-    alert_provide_data: "กรุณาระบุข้อมูลนักเรียน"
+    alert_provide_data: "กรุณาระบุข้อมูลนักเรียน",
+    preview_title: "ตัวอย่างข้อมูล",
+    prev_btn: "ก่อนหน้า",
+    next_btn: "ถัดไป",
+    preview_help: "เลื่อนดูรายการของคุณเพื่อตรวจสอบการจัดวาง"
   },
   km: {
     app_title: "CertStudio",
@@ -312,7 +344,11 @@ const translations = {
     zipping: "កំពុងបង្ហាប់ឯកសារ...",
     complete: "ការនាំចេញបានបញ្ចប់!",
     alert_upload_template: "សូមបញ្ចូលគំរូជាមុនសិន។",
-    alert_provide_data: "សូមផ្តល់ទិន្នន័យសិស្ស។"
+    alert_provide_data: "សូមផ្តល់ទិន្នន័យសិស្ស។",
+    preview_title: "មើលទិន្នន័យសាកល្បង",
+    prev_btn: "មុន",
+    next_btn: "បន្ទាប់",
+    preview_help: "ពិនិត្យមើលបញ្ជីរបស់អ្នកដើម្បីផ្ទៀងផ្ទាត់ការតម្រឹម។"
   },
   vi: {
     app_title: "CertStudio",
@@ -347,7 +383,11 @@ const translations = {
     zipping: "Đang nén tệp...",
     complete: "Xuất Hoàn tất!",
     alert_upload_template: "Vui lòng tải lên mẫu trước.",
-    alert_provide_data: "Vui lòng cung cấp dữ liệu học viên."
+    alert_provide_data: "Vui lòng cung cấp dữ liệu học viên.",
+    preview_title: "Xem trước dữ liệu",
+    prev_btn: "Trước",
+    next_btn: "Sau",
+    preview_help: "Chuyển qua danh sách để kiểm tra căn lề."
   },
   es: {
     app_title: "CertStudio",
@@ -382,7 +422,11 @@ const translations = {
     zipping: "Comprimiendo archivos...",
     complete: "¡Exportación Completada!",
     alert_upload_template: "Por favor, sube una plantilla primero.",
-    alert_provide_data: "Por favor, proporciona los datos de los estudiantes."
+    alert_provide_data: "Por favor, proporciona los datos de los estudiantes.",
+    preview_title: "Vista previa de datos",
+    prev_btn: "Anterior",
+    next_btn: "Siguiente",
+    preview_help: "Desplázate por tu lista para comprobar la alineación."
   },
   de: {
     app_title: "CertStudio",
@@ -417,7 +461,11 @@ const translations = {
     zipping: "Dateien werden komprimiert...",
     complete: "Export abgeschlossen!",
     alert_upload_template: "Bitte laden Sie zuerst eine Vorlage hoch.",
-    alert_provide_data: "Bitte geben Sie Studentendaten an."
+    alert_provide_data: "Bitte geben Sie Studentendaten an.",
+    preview_title: "Datenvorschau",
+    prev_btn: "Zurück",
+    next_btn: "Weiter",
+    preview_help: "Blättern Sie durch Ihre Liste, um die Ausrichtung zu prüfen."
   },
   fr: {
     app_title: "CertStudio",
@@ -452,7 +500,11 @@ const translations = {
     zipping: "Compression des fichiers...",
     complete: "Exportation Terminée !",
     alert_upload_template: "Veuillez d'abord télécharger un modèle.",
-    alert_provide_data: "Veuillez fournir les données des étudiants."
+    alert_provide_data: "Veuillez fournir les données des étudiants.",
+    preview_title: "Aperçu des données",
+    prev_btn: "Précédent",
+    next_btn: "Suivant",
+    preview_help: "Faites défiler votre liste pour vérifier l'alignement."
   },
   it: {
     app_title: "CertStudio",
@@ -487,7 +539,11 @@ const translations = {
     zipping: "Compressione file...",
     complete: "Esportazione Completata!",
     alert_upload_template: "Per favore, carica prima un modello.",
-    alert_provide_data: "Per favore, fornisci i dati degli studenti."
+    alert_provide_data: "Per favore, fornisci i dati degli studenti.",
+    preview_title: "Anteprima dati",
+    prev_btn: "Precedente",
+    next_btn: "Successivo",
+    preview_help: "Scorri la tua lista per controllare l'allineamento."
   },
   ar: {
     app_title: "CertStudio",
@@ -522,7 +578,11 @@ const translations = {
     zipping: "جاري ضغط الملفات...",
     complete: "تم التصدير بنجاح!",
     alert_upload_template: "يرجى تحميل القالب أولاً.",
-    alert_provide_data: "يرجى تقديم بيانات الطلاب."
+    alert_provide_data: "يرجى تقديم بيانات الطلاب.",
+    preview_title: "معاينة البيانات",
+    prev_btn: "السابق",
+    next_btn: "التالي",
+    preview_help: "تنقل عبر القائمة للتحقق من المحاذاة."
   },
   ru: {
     app_title: "CertStudio",
@@ -557,7 +617,11 @@ const translations = {
     zipping: "Архивация файлов...",
     complete: "Экспорт завершен!",
     alert_upload_template: "Пожалуйста, сначала загрузите шаблон.",
-    alert_provide_data: "Пожалуйста, предоставьте данные студентов."
+    alert_provide_data: "Пожалуйста, предоставьте данные студентов.",
+    preview_title: "Предварительный просмотр данных",
+    prev_btn: "Назад",
+    next_btn: "Вперед",
+    preview_help: "Прокрутите список, чтобы проверить выравнивание."
   },
   tl: {
     app_title: "CertStudio",
@@ -592,6 +656,10 @@ const translations = {
     zipping: "Zipping files...",
     complete: "Tapos na ang Pag-export!",
     alert_upload_template: "Mangyaring i-upload muna ang template.",
-    alert_provide_data: "Mangyaring magbigay ng data ng mag-aaral."
+    alert_provide_data: "Mangyaring magbigay ng data ng mag-aaral.",
+    preview_title: "Preview ng Data",
+    prev_btn: "Nakaraan",
+    next_btn: "Susunod",
+    preview_help: "I-cycle ang iyong listahan para i-check ang alignment."
   }
 };

@@ -426,6 +426,16 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); bor
     border-radius: 1rem;
 }
 
+.preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f8fafc;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
 /* Progress Bar */
 .progress-bar {
     width: 100%;

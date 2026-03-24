@@ -7,22 +7,8 @@
 ---
 
 ## 🌐 Language Navigation
-[English](#english) [繁體中文](#繁體中文-出cert神器-零幀出cert)
-- [简体中文](#简体中文-出cert神器-零帧出cert)
-- [日本語](#日本語)
-- [한국어](#한국어)
-- [Bahasa Indonesia](#bahasa-indonesia)
-- [Bahasa Melayu](#bahasa-melayu)
-- [ไทย](#ไทย)
-- [ភាសាខ្មែរ](#ភាសាខ្មែរ)
-- [Tiếng Việt](#tiếng-việt)
-- [Filipino](#filipino)
-- [Español](#español)
-- [Deutsch](#deutsch)
-- [Français](#français)
-- [Italiano](#italiano)
-- [العربية](#العربية)
-- [Русский](#русский)
+
+[English](#english) | [繁體中文](#繁體中文-出cert神器-零幀出cert) | [简体中文](#简体中文-出cert神器-零帧出cert) | [日本語](#日本語) | [한국어](#한국어) | [Bahasa Indonesia](#bahasa-indonesia) | [Bahasa Melayu](#bahasa-melayu) | [ไทย](#ไทย) | [ភាសាខ្មែរ](#ភាសាខ្មែរ) | [Tiếng Việt](#tiếng-việt) | [Filipino](#filipino) | [Español](#español) | [Deutsch](#deutsch) | [Français](#français) | [Italiano](#italiano) | [العربية](#العربية) | [Русский](#русский)
 
 ---
 
