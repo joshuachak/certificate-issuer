@@ -1,6 +1,11 @@
 # CertStudio - Local Certificate Issuer
 
+[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+
 CertStudio is a 100% private, local web application designed to automate the generation of certificates. All processing happens entirely in your browser—no data is ever sent to a server.
+
+## 🔗 Try it Online
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)**
 
 ## 🌟 Features
 
