@@ -446,9 +446,10 @@ document.addEventListener('DOMContentLoaded', () => {
             progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
         }
         
-        // Add mail merge file to zip if there is at least one email provided
+        // Download mail merge file separately if there is at least one email provided
         if (records.some(r => r.email)) {
-            zip.file("mail_merge.csv", mailMergeData);
+            const blob = new Blob([mailMergeData], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "mail_merge.csv");
         }
 
         saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
