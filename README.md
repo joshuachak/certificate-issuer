@@ -7,8 +7,7 @@
 ---
 
 ## 🌐 Language Navigation
-- [English](#english)
-- [繁體中文](#繁體中文-出cert神器-零幀出cert)
+[English](#english) [繁體中文](#繁體中文-出cert神器-零幀出cert)
 - [简体中文](#简体中文-出cert神器-零帧出cert)
 - [日本語](#日本語)
 - [한국어](#한국어)
