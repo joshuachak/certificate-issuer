@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
     const editorPanel = document.querySelector('.editor-panel');
+    const languageSelect = document.getElementById('language-select');
 
     // State
     let templateImageWidth = 0;
@@ -37,6 +38,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentZoom = 1.0;
     let originalFileName = "certificate";
     let bgDataURL = null;
+    let currentLang = localStorage.getItem('certstudio_lang') || 'en';
+
+    // --- i18n Logic ---
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('certstudio_lang', lang);
+        
+        // Handle RTL for Arabic
+        if (lang === 'ar') {
+            document.documentElement.dir = 'rtl';
+            document.body.classList.add('rtl');
+        } else {
+            document.documentElement.dir = 'ltr';
+            document.body.classList.remove('rtl');
+        }
+
+        const dict = translations[lang] || translations['en'];
+        
+        // Translate elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) {
+                // If it contains an SVG, preserve it
+                const svg = el.querySelector('svg');
+                if (svg) {
+                    el.innerHTML = '';
+                    el.appendChild(svg);
+                    el.appendChild(document.createTextNode(' ' + dict[key]));
+                } else {
+                    el.textContent = dict[key];
+                }
+            }
+        });
+
+        // Translate placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (dict[key]) el.placeholder = dict[key].replace(/\\n/g, '\n');
+        });
+
+        languageSelect.value = lang;
+    }
+
+    languageSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+    setLanguage(currentLang); // Initialize
+
+    // --- End i18n ---
 
     canvas.setWidth(800);
     canvas.setHeight(600);
@@ -95,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
     templateUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        console.log("File selected:", file.name, file.type);
         originalFileName = file.name.replace(/\.[^/.]+$/, "");
         const reader = new FileReader();
         if (file.type === 'application/pdf') {
@@ -112,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await page.render({canvasContext: ctx, viewport: viewport}).promise;
                     bgDataURL = tempCanvas.toDataURL('image/jpeg', 0.9);
                     setCanvasBackground(bgDataURL);
-                } catch (err) { alert("PDF Error during loading."); }
+                } catch (err) { alert("PDF Error."); }
             };
             reader.readAsArrayBuffer(file);
         } else {
@@ -137,10 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Editor
     function addPlaceholder(field, text) {
-        if (!templateLoaded) return alert("Please upload a template first.");
-        const defaultWidth = canvas.width * 0.8;
+        if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
         const textObj = new fabric.Textbox(text, {
-            left: canvas.width / 2, top: canvas.height / 2, width: defaultWidth,
+            left: canvas.width / 2, top: canvas.height / 2, width: canvas.width * 0.8,
             fontSize: 60, fontFamily: 'Times New Roman', fill: '#000000', textAlign: 'center',
             originX: 'center', originY: 'center', customFieldType: field 
         });
@@ -246,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(btnGenerate) btnGenerate.addEventListener('click', async () => {
-        if (!templateLoaded) return alert("Please upload a template first.");
+        if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
         let records = [];
         if (document.querySelector('.tab-btn[data-tab="tab-text"]').classList.contains('active')) {
             const val = namesTextarea.value.trim();
@@ -263,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }}));
             }
         }
-        if (!records.length) return alert("Please provide student data.");
+        if (!records.length) return alert(translations[currentLang].alert_provide_data);
 
         const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
         btnGenerate.disabled = true; progressContainer.style.display = 'block';
@@ -275,17 +321,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
 
         const zip = new JSZip();
-        
-        // Dynamic performance detection for concurrency
         const cpuCores = navigator.hardwareConcurrency || 4;
         const deviceMemory = navigator.deviceMemory || 4; 
-        
         let batchSize = Math.min(Math.floor(cpuCores * 1.5), Math.floor(deviceMemory * 3), 20);
         if (batchSize < 2) batchSize = 2; 
         
-        console.log(`Performance Tuning: Detected ${cpuCores} CPU cores and approx ${deviceMemory}GB RAM. Concurrency set to: ${batchSize}`);
+        console.log(`Performance Tuning: Concurrency set to: ${batchSize}`);
         
         let completed = 0;
+        const dict = translations[currentLang];
 
         for (let i = 0; i < records.length; i += batchSize) {
             const batch = records.slice(i, i + batchSize);
@@ -297,12 +341,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             completed += batch.length;
             progressFill.style.width = `${(completed / records.length) * 100}%`;
-            progressText.innerText = `${completed} / ${records.length} generating...`;
+            progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
         }
 
-        progressText.innerText = "Zipping files...";
+        progressText.innerText = dict.zipping;
         saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
-        btnGenerate.disabled = false; progressText.innerText = "Export Complete!";
+        btnGenerate.disabled = false; progressText.innerText = dict.complete;
         setTimeout(() => progressContainer.style.display = 'none', 3000);
     });
 });
