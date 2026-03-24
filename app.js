@@ -249,6 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 4. Download Template Logic
+    if (downloadTemplateBtn) {
+        downloadTemplateBtn.addEventListener('click', () => {
+            const content = "Name,Date,ID\nJohn Doe,2026-03-23,001\nJane Smith,2026-03-23,002";
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "template.csv");
+        });
+    }
+
     // Parallel Worker
     async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat) {
         const vCanvas = new fabric.StaticCanvas(null, { width: templateData.width, height: templateData.height });
