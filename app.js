@@ -178,8 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
             templateIsPDF = true;
             reader.onload = async function() {
                 try {
+                    // Clone the ArrayBuffer because pdfjsLib might transfer and detach the original buffer
+                    originalPDFBytes = new Uint8Array(this.result.slice(0));
+                    
                     const typedarray = new Uint8Array(this.result);
-                    originalPDFBytes = typedarray; // Save for pdf-lib overlay
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
                     const viewport = page.getViewport({ scale: 2.0 }); 
