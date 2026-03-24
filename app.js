@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ctx = tempCanvas.getContext('2d');
                     tempCanvas.height = viewport.height; tempCanvas.width = viewport.width;
                     await page.render({canvasContext: ctx, viewport: viewport}).promise;
-                    bgDataURL = tempCanvas.toDataURL('image/jpeg', 0.9);
+                    bgDataURL = tempCanvas.toDataURL('image/png');
                     setCanvasBackground(bgDataURL);
                 } catch (err) { alert("PDF Error."); }
             };
@@ -307,10 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     vCanvas.renderAll();
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
+
                     if (outputFormat === 'image') {
-                        pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.9 }), 'JPEG', 0, 0, templateData.width, templateData.height);
+                        const pageImg = vCanvas.toDataURL({ format: 'png' });
+                        pdf.addImage(pageImg, 'PNG', 0, 0, templateData.width, templateData.height);
                     } else {
-                        pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
+                        pdf.addImage(templateData.bg, 'PNG', 0, 0, templateData.width, templateData.height);
                         vCanvas.getObjects().forEach(o => {
                             if (o.type === 'textbox' || o.type === 'text') {
                                 let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
