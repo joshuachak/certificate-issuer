@@ -36,7 +36,8 @@ const translations = {
     preview_title: "Preview Data",
     prev_btn: "Previous",
     next_btn: "Next",
-    preview_help: "Cycle through your list to check alignment."
+    preview_help: "Cycle through your list to check alignment.",
+    view_github: "GitHub"
   },
   "zh-TW": {
     app_title: "出Cert神器-零幀出Cert",
@@ -75,7 +76,8 @@ const translations = {
     preview_title: "數據預覽",
     prev_btn: "上一個",
     next_btn: "下一個",
-    preview_help: "循環切換名單以檢查對齊效果。"
+    preview_help: "循環切換名單以檢查對齊效果。",
+    view_github: "GitHub 源碼"
   },
   "zh-CN": {
     app_title: "出Cert神器-零帧出Cert",
@@ -114,11 +116,12 @@ const translations = {
     preview_title: "数据预览",
     prev_btn: "上一个",
     next_btn: "下一个",
-    preview_help: "循环切换名单以检查对齐效果。"
+    preview_help: "循环切换名单以检查对齐效果。",
+    view_github: "GitHub 源码"
   },
   ja: {
     app_title: "CertStudio",
-    app_subtitle: "100% ローカル＆プライベート。フォルダから直接動作します。",
+    app_subtitle: "100% ローカル＆プライベート. フォルダから直接動作します。",
     step_1: "1. テンプレートをアップロード",
     step_1_help: "高解像度の画像（PNG/JPG）またはPDFファイルを選択してください。",
     step_2: "2. 学生データ",
@@ -153,7 +156,8 @@ const translations = {
     preview_title: "データのプレビュー",
     prev_btn: "前へ",
     next_btn: "次へ",
-    preview_help: "リストを切り替えて配置を確認してください。"
+    preview_help: "リストを切り替えて配置を確認してください。",
+    view_github: "GitHubで見る"
   },
   ko: {
     app_title: "CertStudio",
@@ -192,7 +196,8 @@ const translations = {
     preview_title: "데이터 미리보기",
     prev_btn: "이전",
     next_btn: "다음",
-    preview_help: "목록을 순회하며 정렬을 확인하세요."
+    preview_help: "목록을 순회하며 정렬을 확인하세요.",
+    view_github: "GitHub 보기"
   },
   id: {
     app_title: "CertStudio",
@@ -231,7 +236,8 @@ const translations = {
     preview_title: "Pratinjau Data",
     prev_btn: "Sebelumnya",
     next_btn: "Berikutnya",
-    preview_help: "Gulir daftar Anda untuk memeriksa penyelarasan."
+    preview_help: "Gulir daftar Anda untuk memeriksa penyelarasan.",
+    view_github: "Lihat di GitHub"
   },
   ms: {
     app_title: "CertStudio",
@@ -270,7 +276,8 @@ const translations = {
     preview_title: "Pratonton Data",
     prev_btn: "Sebelumnya",
     next_btn: "Seterusnya",
-    preview_help: "Semak senarai anda untuk melihat penjajaran."
+    preview_help: "Semak senarai anda untuk melihat penjajaran.",
+    view_github: "Lihat di GitHub"
   },
   th: {
     app_title: "CertStudio",
@@ -309,7 +316,8 @@ const translations = {
     preview_title: "ตัวอย่างข้อมูล",
     prev_btn: "ก่อนหน้า",
     next_btn: "ถัดไป",
-    preview_help: "เลื่อนดูรายการของคุณเพื่อตรวจสอบการจัดวาง"
+    preview_help: "เลื่อนดูรายการของคุณเพื่อตรวจสอบการจัดวาง",
+    view_github: "ดูบน GitHub"
   },
   km: {
     app_title: "CertStudio",
@@ -321,7 +329,7 @@ const translations = {
     tab_file: "ទាញយកទិន្នន័យ",
     names_placeholder: "ឧទាហរណ៍៖\nសុខ ជា\nសៅ រិទ្ធ",
     download_template: "ទាញយកគំរូ CSV",
-    step_3: "៣. ការគ្រប់គ្រងកម្មវិធីកែសម្រួល",
+    step_3: "៣. การគ្រប់គ្រងកម្មវិធីកែសម្រួល",
     add_name: "បន្ថែម [ឈ្មោះ]",
     add_date: "បន្ថែម [កាលបរិច្ឆេទ]",
     add_id: "បន្ថែម [លេខសម្គាល់]",
@@ -337,7 +345,7 @@ const translations = {
     font: "ពុម្ពអក្សរ",
     delete_selected: "លុបអ្វីដែលបានជ្រើសរើស",
     step_4: "៤. ការកំណត់ការនាំចេញ",
-    format_image: "PDF ជារូបភាព (លឿន និងសុវត្ថិភាព)",
+    format_image: "PDF ជារូបភាព (លឿន និងសុវត្ថិภาพ)",
     format_text: "PDF ជាអត្ថបទ (អាចជ្រើសរើសបាន)",
     export_btn: "នាំចេញវិញ្ញាបនបត្រ",
     generating: "កំពុងបង្កើត...",
@@ -348,7 +356,8 @@ const translations = {
     preview_title: "មើលទិន្នន័យសាកល្បង",
     prev_btn: "មុន",
     next_btn: "បន្ទាប់",
-    preview_help: "ពិនិត្យមើលបញ្ជីរបស់អ្នកដើម្បីផ្ទៀងផ្ទាត់ការតម្រឹម។"
+    preview_help: "ពិនិត្យមើលបញ្ជីរបស់អ្នកដើម្បីផ្ទៀងផ្ទាត់ការតម្រឹម។",
+    view_github: "មើលលើ GitHub"
   },
   vi: {
     app_title: "CertStudio",
@@ -387,7 +396,8 @@ const translations = {
     preview_title: "Xem trước dữ liệu",
     prev_btn: "Trước",
     next_btn: "Sau",
-    preview_help: "Chuyển qua danh sách để kiểm tra căn lề."
+    preview_help: "Chuyển qua danh sách để kiểm tra căn lề.",
+    view_github: "Xem trên GitHub"
   },
   es: {
     app_title: "CertStudio",
@@ -426,7 +436,8 @@ const translations = {
     preview_title: "Vista previa de datos",
     prev_btn: "Anterior",
     next_btn: "Siguiente",
-    preview_help: "Desplázate por tu lista para comprobar la alineación."
+    preview_help: "Desplázate por tu lista para comprobar la alineación.",
+    view_github: "Ver en GitHub"
   },
   de: {
     app_title: "CertStudio",
@@ -465,7 +476,8 @@ const translations = {
     preview_title: "Datenvorschau",
     prev_btn: "Zurück",
     next_btn: "Weiter",
-    preview_help: "Blättern Sie durch Ihre Liste, um die Ausrichtung zu prüfen."
+    preview_help: "Blättern Sie durch Ihre Liste, um die Ausrichtung zu prüfen.",
+    view_github: "Auf GitHub ansehen"
   },
   fr: {
     app_title: "CertStudio",
@@ -504,7 +516,8 @@ const translations = {
     preview_title: "Aperçu des données",
     prev_btn: "Précédent",
     next_btn: "Suivant",
-    preview_help: "Faites défiler votre liste pour vérifier l'alignement."
+    preview_help: "Faites défiler votre liste pour vérifier l'alignement.",
+    view_github: "Voir sur GitHub"
   },
   it: {
     app_title: "CertStudio",
@@ -543,7 +556,8 @@ const translations = {
     preview_title: "Anteprima dati",
     prev_btn: "Precedente",
     next_btn: "Successivo",
-    preview_help: "Scorri la tua lista per controllare l'allineamento."
+    preview_help: "Scorri la tua lista per controllare l'allineamento.",
+    view_github: "Vedi su GitHub"
   },
   ar: {
     app_title: "CertStudio",
@@ -582,7 +596,8 @@ const translations = {
     preview_title: "معاينة البيانات",
     prev_btn: "السابق",
     next_btn: "التالي",
-    preview_help: "تنقل عبر القائمة للتحقق من المحاذاة."
+    preview_help: "تنقل عبر القائمة للتحقق من المحاذاة.",
+    view_github: "عرض على GitHub"
   },
   ru: {
     app_title: "CertStudio",
@@ -621,7 +636,8 @@ const translations = {
     preview_title: "Предварительный просмотр данных",
     prev_btn: "Назад",
     next_btn: "Вперед",
-    preview_help: "Прокрутите список, чтобы проверить выравнивание."
+    preview_help: "Прокрутите список, чтобы проверить выравнивание.",
+    view_github: "Посмотреть на GitHub"
   },
   tl: {
     app_title: "CertStudio",
@@ -660,6 +676,7 @@ const translations = {
     preview_title: "Preview ng Data",
     prev_btn: "Nakaraan",
     next_btn: "Susunod",
-    preview_help: "I-cycle ang iyong listahan para i-check ang alignment."
+    preview_help: "I-cycle ang iyong listahan para i-check ang alignment.",
+    view_github: "Tingnan sa GitHub"
   }
 };

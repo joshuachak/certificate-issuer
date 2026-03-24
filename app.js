@@ -102,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return records;
     }
 
-    // Monitor changes to trigger parsing
     namesTextarea.addEventListener('input', parseRecords);
     dataUpload.addEventListener('change', parseRecords);
     tabBtns.forEach(btn => btn.addEventListener('click', () => setTimeout(parseRecords, 100)));
@@ -112,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentRecords.length) return;
         const record = currentRecords[currentPreviewIndex];
         previewIndexText.innerText = `${currentPreviewIndex + 1} / ${currentRecords.length}`;
-        
         canvas.getObjects().forEach(o => {
             if (o.customFieldType === 'name') o.set('text', record.name || '[Name]');
             else if (o.customFieldType === 'date') o.set('text', record.date || '[Date]');
@@ -121,25 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.renderAll();
     }
 
-    prevPreviewBtn.addEventListener('click', () => {
-        if (currentPreviewIndex > 0) { currentPreviewIndex--; updatePreview(); }
-    });
-    nextPreviewBtn.addEventListener('click', () => {
-        if (currentPreviewIndex < currentRecords.length - 1) { currentPreviewIndex++; updatePreview(); }
-    });
+    prevPreviewBtn.addEventListener('click', () => { if (currentPreviewIndex > 0) { currentPreviewIndex--; updatePreview(); } });
+    nextPreviewBtn.addEventListener('click', () => { if (currentPreviewIndex < currentRecords.length - 1) { currentPreviewIndex++; updatePreview(); } });
 
     // --- Core Editor & Zoom ---
     canvas.setWidth(800); canvas.setHeight(600); canvas.renderAll();
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.style.display = 'none');
-            btn.classList.add('active');
-            const target = document.getElementById(btn.dataset.tab);
-            if (target) target.style.display = 'block';
-        });
-    });
 
     function updateZoom(newZoom) {
         currentZoom = Math.min(Math.max(newZoom, 0.1), 5.0);
@@ -185,12 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const typedarray = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
-                    const viewport = page.getViewport({ scale: 2.5 }); 
+                    const viewport = page.getViewport({ scale: 2.0 }); // Slightly reduced scale for size
                     const tempCanvas = document.createElement('canvas');
                     const ctx = tempCanvas.getContext('2d');
                     tempCanvas.height = viewport.height; tempCanvas.width = viewport.width;
                     await page.render({canvasContext: ctx, viewport: viewport}).promise;
-                    bgDataURL = tempCanvas.toDataURL('image/png');
+                    // Use High-Quality JPEG (0.95) instead of PNG to balance size and color
+                    bgDataURL = tempCanvas.toDataURL('image/jpeg', 0.95);
                     setCanvasBackground(bgDataURL);
                 } catch (err) { alert("PDF Error."); }
             };
@@ -223,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             originX: 'center', originY: 'center', customFieldType: field 
         });
         canvas.add(textObj); canvas.setActiveObject(textObj);
-        updatePreview(); // Sync immediately
+        updatePreview();
     }
     
     if(btnAddName) btnAddName.addEventListener('click', () => addPlaceholder('name', '[Name]'));
@@ -307,19 +292,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     vCanvas.renderAll();
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
-
                     if (outputFormat === 'image') {
-                        const pageImg = vCanvas.toDataURL({ format: 'png' });
-                        pdf.addImage(pageImg, 'PNG', 0, 0, templateData.width, templateData.height);
+                        // Use JPEG (0.92) for the Image-based PDF to drastically reduce file size
+                        const pageImg = vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 });
+                        pdf.addImage(pageImg, 'JPEG', 0, 0, templateData.width, templateData.height);
                     } else {
-                        pdf.addImage(templateData.bg, 'PNG', 0, 0, templateData.width, templateData.height);
+                        // Text mode: background is still JPEG for efficiency
+                        pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
                         vCanvas.getObjects().forEach(o => {
                             if (o.type === 'textbox' || o.type === 'text') {
                                 let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                
-                                // Scale calibration: Convert editor pixels to PDF points (standard 0.75 factor)
                                 const calibratedSize = o.fontSize * 0.75;
-                                
                                 pdf.setFont(font, 'normal').setFontSize(calibratedSize).setTextColor(o.fill);
                                 pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
                             }
