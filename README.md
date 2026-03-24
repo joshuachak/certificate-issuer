@@ -31,7 +31,8 @@
 ### CertStudio
 **100% Local & Private. Works directly from your folder.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Try it Online (No Install Required)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Key Features
 - **Privacy First**: All processing happens entirely in your browser. No student data ever leaves your computer.
@@ -55,7 +56,8 @@
 ### 出Cert神器-零幀出Cert
 **100% 本地且私密。直接在您的文件夾中工作。**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 立即在線試用 (無需安裝)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 主要功能
 - **隱私第一**: 所有處理完全在您的瀏覽器中進行。任何學生數據都不會離開您的電腦。
@@ -79,7 +81,8 @@
 ### 出Cert神器-零帧出Cert
 **100% 本地且私密。直接在您的文件夹中工作。**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 立即在线试用 (无需安装)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 主要功能
 - **隐私第一**: 所有处理完全在您的浏览器中进行。任何学生数据都不会离开您的电脑。
@@ -89,7 +92,7 @@
 - **ZIP 下载**: 自动将所有个人 PDF 打包成一个 ZIP 文件。
 
 ### 🚀 如何运行
-1. 下载或克隆此仓库。
+1. 下载或克隆此仓库.
 2. 双击 `index.html` 文件在浏览器中打开。
 3. 无需安装，无需联网！
 
@@ -103,7 +106,8 @@
 ### CertStudio
 **100% ローカル＆プライベート。フォルダから直接動作します。**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 オンラインで試す (インストール不要)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 主な機能
 - **プライバシー重視**: すべての処理はブラウザ内で行われます。学生データがコンピュータの外に出ることはありません。
@@ -127,7 +131,8 @@
 ### CertStudio
 **100% 로컬 및 개인 정보 보호. 폴더에서 직접 작동합니다.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 온라인으로 체험하기 (설치 필요 없음)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 주요 특징
 - **개인 정보 보호 최우선**: 모든 처리는 브라우저 내에서만 이루어집니다. 어떤 학생 데이터도 컴퓨터 외부로 전송되지 않습니다.
@@ -151,7 +156,8 @@
 ### CertStudio
 **100% Lokal & Pribadi. Bekerja langsung dari folder Anda.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Coba Online (Tanpa Instalasi)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Fitur Utama
 - **Privasi Utama**: Semua pemrosesan terjadi sepenuhnya di browser Anda. Tidak ada data siswa yang meninggalkan komputer Anda.
@@ -175,7 +181,8 @@
 ### CertStudio
 **100% Tempatan & Peribadi. Berfungsi terus dari folder anda.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Cuba Dalam Talian (Tanpa Pemasangan)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Ciri-ciri Utama
 - **Privasi Diutamakan**: Semua pemprosesan berlaku sepenuhnya dalam pelayar anda. Tiada data pelajar yang akan meninggalkan komputer anda.
@@ -199,7 +206,8 @@
 ### CertStudio
 **ส่วนตัวและใช้งานในเครื่อง 100% ทำงานโดยตรงจากโฟลเดอร์ของคุณ**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 ทดลองใช้งานออนไลน์ (ไม่ต้องติดตั้ง)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 คุณสมบัติหลัก
 - **ความเป็นส่วนตัวต้องมาก่อน**: การประมวลผลทั้งหมดเกิดขึ้นในเบราว์เซอร์ของคุณ ข้อมูลนักเรียนจะไม่ถูกส่งออกจากคอมพิวเตอร์ของคุณ
@@ -223,7 +231,8 @@
 ### CertStudio
 **ឯកជនភាព និងក្នុងស្រុក 100%។ ដំណើរការដោយផ្ទាល់ពីថតរបស់អ្នក។**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 សាកល្បងតាមអ៊ីនធឺណិត (មិនចាំបាច់ដំឡើង)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 លក្ខណៈពិសេសសំខាន់ៗ
 - **ឯកជនភាពជាចម្បង**: ការដំណើរការទាំងអស់កើតឡើងទាំងស្រុងនៅក្នុងកម្មវិធីរុករករបស់អ្នក។ គ្មានទិន្នន័យសិស្សណាមួយចាកចេញពីកុំព្យូទ័ររបស់អ្នកឡើយ។
@@ -232,7 +241,7 @@
 - **របៀបនាំចេញពីរ**: ជ្រើសរើសរវាង PDF ជារូបភាព (លឿន និងសុវត្ថិភាព) ឬ PDF អន្តរកម្ម (អាចជ្រើសរើសអត្ថបទបាន)។
 - **ទាញយកជាឯកសារ ZIP**: រៀបចំឯកសារ PDF នីមួយៗទៅក្នុងឯកសារ ZIP តែមួយដោយស្វ័យប្រវត្តិ។
 
-### 🚀 របៀបដំណើរការ
+### 🚀 របៀបដំណើរการ
 1. ទាញយក ឬក្លូនឃ្លាំងនេះ។
 2. ចុចពីរដងលើឯកសារ `index.html` ដើម្បីបើកវានៅក្នុងកម្មវិធីរុករករបស់អ្នក។
 3. មិនត្រូវការការដំឡើង ឬអ៊ីនធឺណិតទេ!
@@ -247,7 +256,8 @@
 ### CertStudio
 **100% Nội bộ & Riêng tư. Hoạt động trực tiếp từ thư mục của bạn.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Thử trực tuyến (Không cần cài đặt)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Các Tính Năng Chính
 - **Quyền Riêng Tư Là Trên Hết**: Tất cả quá trình xử lý diễn ra hoàn toàn trong trình duyệt của bạn. Không có dữ liệu học viên nào rời khỏi máy tính của bạn.
@@ -271,7 +281,8 @@
 ### CertStudio
 **100% Local y Privado. Funciona directamente desde tu carpeta.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Probar en línea (Sin instalación)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Características Principales
 - **Privacidad Primero**: Todo el procesamiento ocurre en tu navegador. Los datos de los estudiantes nunca salen de tu ordenador.
@@ -295,7 +306,8 @@
 ### CertStudio
 **100 % lokal & privat. Funktioniert direkt aus Ihrem Ordner.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Online ausprobieren (Keine Installation erforderlich)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Hauptmerkmale
 - **Datenschutz zuerst**: Die gesamte Verarbeitung findet ausschließlich in Ihrem Browser statt. Es verlassen keine Studentendaten Ihren Computer.
@@ -319,7 +331,8 @@
 ### CertStudio
 **100% Local et Privé. Fonctionne directement depuis votre dossier.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Essayer en ligne (Sans installation)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Caractéristiques Principales
 - **Confidentialité avant tout**: Tout le traitement se fait dans votre navigateur. Aucune donnée d'étudiant ne quitte jamais votre ordinateur.
@@ -330,7 +343,7 @@
 
 ### 🚀 Comment lancer
 1. Téléchargez ou clonez ce dépôt.
-2. Double-cliquez sur le fichier `index.html` pour l'ouvrir dans votre navigateur.
+2. Double-cliquez sur le fichier `index.html` para l'ouvrir dans votre navigateur.
 3. Aucune installation ni connexion internet requise !
 
 ### 🔒 Déclaration de confidentialité
@@ -343,7 +356,8 @@
 ### CertStudio
 **100% Locale e Privato. Funziona direttamente dalla tua cartella.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Prova online (Nessuna installazione richiesta)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Caratteristiche Principali
 - **La Privacy Prima di Tutto**: Tutta l'elaborazione avviene interamente nel tuo browser. Nessun dato degli studenti lascia mai il tuo computer.
@@ -367,7 +381,8 @@
 ### CertStudio
 **محلي وخاص بنسبة 100%. يعمل مباشرة من مجلدك.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 جربه عبر الإنترنت (لا يتطلب التثبيت)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 الميزات الرئيسية
 - **الخصوصية أولاً**: تتم جميع عمليات المعالجة بالكامل في متصفحك. لا تخرج بيانات الطلاب أبداً من جهاز الكمبيوتر الخاص بك.
@@ -391,7 +406,8 @@
 ### CertStudio
 **100% локально и приватно. Работает прямо из вашей папки.**
 
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+## 🔗 Попробовать онлайн (Установка не требуется)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
 
 ### 🌟 Ключевые Особенности
 - **Конфиденциальность Превыше Всего**: Вся обработка происходит исключительно в вашем браузере. Данные студентов никогда не покидают ваш компьютер.
