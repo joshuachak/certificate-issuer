@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
 
                 // Calculate positions
-                const pdfFontSize = cfg.fontSize * 0.75 * scaleY; 
+                const pdfFontSize = cfg.fontSize * 1.0 * scaleY; 
                 const textWidth = font.widthOfTextAtSize(displayText, pdfFontSize);
                 
                 let x = cfg.left * scaleX;
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         vCanvas.getObjects().forEach(o => {
                             if (o.type === 'textbox' || o.type === 'text') {
                                 let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                pdf.setFont(font, 'normal').setFontSize(o.fontSize * 0.75).setTextColor(o.fill);
+                                pdf.setFont(font, 'normal').setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
                                 pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
                             }
                         });
