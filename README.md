@@ -17,6 +17,7 @@
 - [ไทย](#ไทย)
 - [ភាសាខ្មែរ](#ភាសាខ្មែរ)
 - [Tiếng Việt](#tiếng-việt)
+- [Filipino](#filipino)
 - [Español](#español)
 - [Deutsch](#deutsch)
 - [Français](#français)
@@ -241,7 +242,7 @@
 - **របៀបនាំចេញពីរ**: ជ្រើសរើសរវាង PDF ជារូបភាព (លឿន និងសុវត្ថិភាព) ឬ PDF អន្តរកម្ម (អាចជ្រើសរើសអត្ថបទបាន)។
 - **ទាញយកជាឯកសារ ZIP**: រៀបចំឯកសារ PDF នីមួយៗទៅក្នុងឯកសារ ZIP តែមួយដោយស្វ័យប្រវត្តិ។
 
-### 🚀 របៀបដំណើរการ
+### 🚀 របៀបដំណើរការ
 1. ទាញយក ឬក្លូនឃ្លាំងនេះ។
 2. ចុចពីរដងលើឯកសារ `index.html` ដើម្បីបើកវានៅក្នុងកម្មវិធីរុករករបស់អ្នក។
 3. មិនត្រូវការការដំឡើង ឬអ៊ីនធឺណិតទេ!
@@ -273,6 +274,29 @@
 
 ### 🔒 Tuyên Bố Quyền Riêng Tư
 **Không Truyền Tải Dữ Liệu**: Ứng dụng này không có backend. Chứng chỉ và dữ liệu người nhận của bạn được xử lý tại chỗ bằng JavaScript. Chúng tôi không theo dõi, lưu trữ hoặc xem dữ liệu của bạn.
+
+---
+
+## Filipino
+
+### CertStudio
+**100% Lokal at Pribado. Gumagana nang direkta mula sa iyong folder.**
+
+## 🔗 Subukan Online (Walang Install na Kailangan)
+**[https://joshuachak.github.io/certificate-issuer/](https://joshuachak.github.io/certificate-issuer/)** [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://joshuachak.github.io/certificate-issuer/)
+
+### 🌟 Key Features
+- **Unang Pagkapribado**: Ang lahat ng pagproseso ay nangyayari sa iyong browser.
+- **Batch Processing**: Mag-import ng listahan gamit ang Quick Paste o TSV/CSV files.
+- **Interactive Editor**: I-drag-and-drop ang mga placeholder para sa Pangalan, Petsa, at ID.
+- **Dual Export Modes**: Pumili sa pagitan ng Image PDF o Selectable PDF.
+- **ZIP Download**: Awtomatikong pag-package ng lahat ng PDF sa isang ZIP file.
+
+### 🚀 How to Run
+I-download ang repository at i-double click ang index.html.
+
+### 🔒 Privacy Statement
+**Zero Data Transfer**. Lahat ay lokal.
 
 ---
 
@@ -339,7 +363,7 @@
 - **Traitement par lots**: Importez des listes de destinataires via Collage rapide ou fichiers CSV/TSV.
 - **Éditeur interactif**: Glissez-déposez des espaces réservés pour les noms, les dates et les identifiants. Contrôle total des polices et des couleurs.
 - **Double mode d'exportation**: Choisissez entre PDF Image (Sécurisé) ou PDF Interactif (Texte sélectionnable).
-- **Téléchargement ZIP**: Regroupe automatiquement tous les PDF individuels dans un seul fichier ZIP.
+- **Téléchargement ZIP**: Regroupe automatiquement tous les PDF individuel dans un seul fichier ZIP.
 
 ### 🚀 Comment lancer
 1. Téléchargez ou clonez ce dépôt.
@@ -347,7 +371,7 @@
 3. Aucune installation ni connexion internet requise !
 
 ### 🔒 Déclaration de confidentialité
-**Zéro transfert de données**: Cette application n'a pas de backend. Vos certificats et données de destinataires sont traités localement via JavaScript. Nous ne suivons, ne stockons et ne voyons pas vos données.
+**Zéro transfert de données**: Cette application n'a pas de backend. Vos certificats et données de destinataires sont traités localmente via JavaScript. Nous ne suivons, ne stockons et ne voyons pas vos données.
 
 ---
 
