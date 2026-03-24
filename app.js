@@ -80,14 +80,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const isPaste = document.querySelector('.tab-btn[data-tab="tab-text"]').classList.contains('active');
         if (isPaste) {
             const val = namesTextarea.value.trim();
-            if (val) val.split('\n').forEach(n => { if (n.trim()) records.push({name: n.trim(), date: '', id: ''}) });
+            if (val) {
+                val.split('\n').forEach(line => {
+                    const parts = line.split(',').map(s => s.trim());
+                    if (parts[0]) {
+                        records.push({
+                            name: parts[0], 
+                            email: parts[1] || '', 
+                            date: '', 
+                            id: ''
+                        });
+                    }
+                });
+            }
         } else {
             const file = dataUpload.files[0];
             if (file) {
                 await new Promise(res => Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => {
                     r.data.forEach(row => {
                         const norm = {}; for (let k in row) norm[k.toLowerCase().trim()] = row[k];
-                        records.push({name: norm['name']||'', date: norm['date']||'', id: norm['issuance number'] || norm['id'] || ''});
+                        records.push({
+                            name: norm['name']||'', 
+                            email: norm['email']||'',
+                            date: norm['date']||'', 
+                            id: norm['issuance number'] || norm['id'] || ''
+                        });
                     });
                     res();
                 }}));
@@ -284,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     downloadTemplateBtn.addEventListener('click', () => {
-        const content = "Name,Date,ID\nJohn Doe,2026-03-23,001\nJane Smith,2026-03-23,002";
+        const content = "Name,Email,Date,ID\nJohn Doe,john@example.com,2026-03-23,001\nJane Smith,jane@example.com,2026-03-23,002";
         const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
         saveAs(blob, "template.csv");
     });
@@ -403,18 +420,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const batchSize = Math.min(Math.floor((navigator.hardwareConcurrency || 4) * 1.5), Math.floor((navigator.deviceMemory || 4) * 3), 20);
         let completed = 0;
         const dict = translations[currentLang];
+        
+        let mailMergeData = "Name,Email,Date,ID,Attachment_Filename\n";
 
         for (let i = 0; i < records.length; i += batchSize) {
             const batch = records.slice(i, i + batchSize);
             const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat)));
             results.forEach((res, idx) => {
+                const record = batch[idx];
                 let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
                 let idPart = res.id ? `_${String(res.id).replace(/[^a-z0-9]/gi, '_')}` : "";
-                zip.file(`${originalFileName}${idPart}_${namePart}.pdf`, res.data);
+                const filename = `${originalFileName}${idPart}_${namePart}.pdf`;
+                
+                zip.file(filename, res.data);
+                
+                // Add to mail merge CSV
+                const safeName = record.name ? `"${record.name.replace(/"/g, '""')}"` : "";
+                const safeEmail = record.email ? `"${record.email.replace(/"/g, '""')}"` : "";
+                const safeDate = record.date ? `"${record.date.replace(/"/g, '""')}"` : "";
+                const safeId = record.id ? `"${record.id.replace(/"/g, '""')}"` : "";
+                mailMergeData += `${safeName},${safeEmail},${safeDate},${safeId},"${filename}"\n`;
             });
             completed += batch.length;
             progressFill.style.width = `${(completed / records.length) * 100}%`;
             progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+        }
+        
+        // Add mail merge file to zip if there is at least one email provided
+        if (records.some(r => r.email)) {
+            zip.file("mail_merge.csv", mailMergeData);
         }
 
         saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
