@@ -316,7 +316,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         vCanvas.getObjects().forEach(o => {
                             if (o.type === 'textbox' || o.type === 'text') {
                                 let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                pdf.setFont(font, 'normal').setFontSize(o.fontSize).setTextColor(o.fill);
+                                
+                                // Scale calibration: Convert editor pixels to PDF points (standard 0.75 factor)
+                                const calibratedSize = o.fontSize * 0.75;
+                                
+                                pdf.setFont(font, 'normal').setFontSize(calibratedSize).setTextColor(o.fill);
                                 pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
                             }
                         });
