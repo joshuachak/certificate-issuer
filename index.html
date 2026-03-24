@@ -27,9 +27,21 @@
     <div class="app-container">
         <header>
             <div>
-                <h1 id="app_title" data-i18n="app_title">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15l-2 5l9-5l-9-5l2 5z"></path><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M12 20v-4"></path><path d="M12 8v-4"></path><path d="M4 12h4"></path><path d="M16 12h4"></path></svg>
-                    CertStudio
+                <h1>
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4f46e5" />
+                                <stop offset="100%" stop-color="#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="4" y="6" width="24" height="20" rx="3" stroke="url(#logo-grad)" stroke-width="2.5"/>
+                        <path d="M10 13H22" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M10 18H18" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="23" cy="21" r="5" fill="white" stroke="url(#logo-grad)" stroke-width="2"/>
+                        <path d="M23 19V23M21 21H25" stroke="url(#logo-grad)" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span id="app_title_text" data-i18n="app_title">CertStudio</span>
                 </h1>
                 <p data-i18n="app_subtitle">100% Local & Private. Works directly from your folder.</p>
             </div>
