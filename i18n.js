@@ -35,7 +35,7 @@ const translations = {
     alert_provide_data: "Please provide student data."
   },
   "zh-TW": {
-    app_title: "CertStudio",
+    app_title: "出Cert神器-零幀出Cert",
     app_subtitle: "100% 本地且私密。直接在您的文件夾中工作。",
     step_1: "1. 上傳模板",
     step_1_help: "選擇高解析度圖片 (PNG/JPG) 或 PDF 文件。",
@@ -70,7 +70,7 @@ const translations = {
     alert_provide_data: "請提供學生數據。"
   },
   "zh-CN": {
-    app_title: "CertStudio",
+    app_title: "出Cert神器-零帧出Cert",
     app_subtitle: "100% 本地且私密。直接在您的文件夹中工作。",
     step_1: "1. 上传模板",
     step_1_help: "选择高分辨率图片 (PNG/JPG) 或 PDF 文件。",
