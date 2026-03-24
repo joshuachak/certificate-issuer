@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let templateImageWidth = 0;
     let templateImageHeight = 0;
     let templateLoaded = false;
+    let templateIsPDF = false;
+    let originalPDFBytes = null; // Store raw bytes for overlay
     let currentZoom = 1.0;
     let originalFileName = "certificate";
     let bgDataURL = null;
@@ -102,11 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return records;
     }
 
-    // Monitor changes to trigger parsing
     namesTextarea.addEventListener('input', parseRecords);
     dataUpload.addEventListener('change', parseRecords);
     
-    // --- Tabs Logic ---
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
@@ -114,8 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('active');
             const target = document.getElementById(btn.dataset.tab);
             if (target) target.style.display = 'block';
-            
-            // Re-parse records when switching tabs
             setTimeout(parseRecords, 10);
         });
     });
@@ -125,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentRecords.length) return;
         const record = currentRecords[currentPreviewIndex];
         previewIndexText.innerText = `${currentPreviewIndex + 1} / ${currentRecords.length}`;
-        
         canvas.getObjects().forEach(o => {
             if (o.customFieldType === 'name') o.set('text', record.name || '[Name]');
             else if (o.customFieldType === 'date') o.set('text', record.date || '[Date]');
@@ -134,16 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.renderAll();
     }
 
-    prevPreviewBtn.addEventListener('click', () => {
-        if (currentPreviewIndex > 0) { currentPreviewIndex--; updatePreview(); }
-    });
-    nextPreviewBtn.addEventListener('click', () => {
-        if (currentPreviewIndex < currentRecords.length - 1) { currentPreviewIndex++; updatePreview(); }
-    });
+    prevPreviewBtn.addEventListener('click', () => { if (currentPreviewIndex > 0) { currentPreviewIndex--; updatePreview(); } });
+    nextPreviewBtn.addEventListener('click', () => { if (currentPreviewIndex < currentRecords.length - 1) { currentPreviewIndex++; updatePreview(); } });
 
-    // --- Core Editor & Zoom ---
-    canvas.setWidth(800); canvas.setHeight(600); canvas.renderAll();
-
+    // --- Zoom Logic ---
     function updateZoom(newZoom) {
         currentZoom = Math.min(Math.max(newZoom, 0.1), 5.0);
         const wrapper = document.getElementById('canvas-wrapper');
@@ -161,18 +152,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.ctrlKey || e.metaKey) { e.preventDefault(); updateZoom(currentZoom * Math.pow(1.1, -e.deltaY / 100)); }
     }, { passive: false });
 
-    if(document.getElementById('zoom-in-btn')) document.getElementById('zoom-in-btn').addEventListener('click', () => updateZoom(currentZoom * 1.2));
-    if(document.getElementById('zoom-out-btn')) document.getElementById('zoom-out-btn').addEventListener('click', () => updateZoom(currentZoom / 1.2));
-    if(document.getElementById('zoom-reset-btn')) document.getElementById('zoom-reset-btn').addEventListener('click', () => {
+    document.getElementById('zoom-in-btn')?.addEventListener('click', () => updateZoom(currentZoom * 1.2));
+    document.getElementById('zoom-out-btn')?.addEventListener('click', () => updateZoom(currentZoom / 1.2));
+    document.getElementById('zoom-reset-btn')?.addEventListener('click', () => {
         if (!templateLoaded) return;
         updateZoom(Math.min(1, (editorPanel.clientWidth - 100) / templateImageWidth));
     });
 
-    if(document.getElementById('center-h-btn')) document.getElementById('center-h-btn').addEventListener('click', () => {
+    // --- Editor Commands ---
+    document.getElementById('center-h-btn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set({ left: canvas.width / 2 }); obj.setCoords(); canvas.renderAll(); }
     });
-    if(document.getElementById('center-v-btn')) document.getElementById('center-v-btn').addEventListener('click', () => {
+    document.getElementById('center-v-btn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set({ top: canvas.height / 2 }); obj.setCoords(); canvas.renderAll(); }
     });
@@ -183,9 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
         originalFileName = file.name.replace(/\.[^/.]+$/, "");
         const reader = new FileReader();
         if (file.type === 'application/pdf') {
+            templateIsPDF = true;
             reader.onload = async function() {
                 try {
                     const typedarray = new Uint8Array(this.result);
+                    originalPDFBytes = typedarray; // Save for pdf-lib overlay
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const page = await pdf.getPage(1);
                     const viewport = page.getViewport({ scale: 2.0 }); 
@@ -199,6 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             reader.readAsArrayBuffer(file);
         } else {
+            templateIsPDF = false;
+            originalPDFBytes = null;
             reader.onload = (f) => { bgDataURL = f.target.result; setCanvasBackground(bgDataURL); };
             reader.readAsDataURL(file);
         }
@@ -229,9 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePreview();
     }
     
-    if(btnAddName) btnAddName.addEventListener('click', () => addPlaceholder('name', '[Name]'));
-    if(btnAddDate) btnAddDate.addEventListener('click', () => addPlaceholder('date', '[Date]'));
-    if(btnAddId) btnAddId.addEventListener('click', () => addPlaceholder('id', '[ID]'));
+    btnAddName.addEventListener('click', () => addPlaceholder('name', '[Name]'));
+    btnAddDate.addEventListener('click', () => addPlaceholder('date', '[Date]'));
+    btnAddId.addEventListener('click', () => addPlaceholder('id', '[ID]'));
     
     canvas.on('selection:created', onObjectSelected);
     canvas.on('selection:updated', onObjectSelected);
@@ -240,39 +236,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function onObjectSelected(e) {
         const obj = e.selected[0];
         if (obj && obj.type === 'textbox') {
-            if(stylingControls) stylingControls.style.display = 'block';
-            if(alignmentControls) alignmentControls.style.display = 'block';
-            if(btnDelete) btnDelete.disabled = false;
-            if(fontSizeInput) fontSizeInput.value = obj.fontSize;
-            if(textColorInput) textColorInput.value = obj.fill;
-            if(textAlignSelect) textAlignSelect.value = obj.textAlign;
-            if(fontFamilySelect) fontFamilySelect.value = obj.fontFamily;
+            stylingControls.style.display = 'block';
+            alignmentControls.style.display = 'block';
+            btnDelete.disabled = false;
+            fontSizeInput.value = obj.fontSize;
+            textColorInput.value = obj.fill;
+            textAlignSelect.value = obj.textAlign;
+            fontFamilySelect.value = obj.fontFamily;
         }
     }
     
     function onObjectCleared() {
-        if(stylingControls) stylingControls.style.display = 'none';
-        if(alignmentControls) alignmentControls.style.display = 'none';
-        if(btnDelete) btnDelete.disabled = true;
+        stylingControls.style.display = 'none';
+        alignmentControls.style.display = 'none';
+        btnDelete.disabled = true;
     }
     
-    if(fontSizeInput) fontSizeInput.addEventListener('input', (e) => {
+    fontSizeInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set('fontSize', parseInt(e.target.value)); canvas.renderAll(); }
     });
-    if(textColorInput) textColorInput.addEventListener('input', (e) => {
+    textColorInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set('fill', e.target.value); canvas.renderAll(); }
     });
-    if(textAlignSelect) textAlignSelect.addEventListener('change', (e) => {
+    textAlignSelect.addEventListener('change', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set('textAlign', e.target.value); canvas.renderAll(); }
     });
-    if(fontFamilySelect) fontFamilySelect.addEventListener('change', (e) => {
+    fontFamilySelect.addEventListener('change', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) { obj.set('fontFamily', e.target.value); canvas.renderAll(); }
     });
-    if(btnDelete) btnDelete.addEventListener('click', () => {
+    btnDelete.addEventListener('click', () => {
         canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
         canvas.discardActiveObject().renderAll();
     });
@@ -285,15 +281,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (downloadTemplateBtn) {
-        downloadTemplateBtn.addEventListener('click', () => {
-            const content = "Name,Date,ID\nJohn Doe,2026-03-23,001\nJane Smith,2026-03-23,002";
-            saveAs(new Blob([content], { type: 'text/csv;charset=utf-8;' }), "template.csv");
-        });
+    downloadTemplateBtn.addEventListener('click', () => {
+        const content = "Name,Date,ID\nJohn Doe,2026-03-23,001\nJane Smith,2026-03-23,002";
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        saveAs(blob, "template.csv");
+    });
+
+    // --- Helper: Convert HEX to RGB for pdf-lib ---
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16) / 255,
+            g: parseInt(result[2], 16) / 255,
+            b: parseInt(result[3], 16) / 255
+        } : {r:0, g:0, b:0};
     }
 
     // --- Generation Logic ---
     async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat) {
+        // Mode A: PDF Overlay using pdf-lib (Preserves original PDF content)
+        if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
+            const { PDFDocument, rgb, StandardFonts } = PDFLib;
+            const pdfDoc = await PDFDocument.load(originalPDFBytes);
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            const { width, height } = firstPage.getSize();
+
+            // Coordinate Mapping: Fabric (px) -> PDF Points
+            // Note: Fabric 0,0 is Top-Left. PDF-Lib 0,0 is Bottom-Left.
+            const scaleX = width / templateData.width;
+            const scaleY = height / templateData.height;
+
+            for (const cfg of objectsConfig) {
+                let displayText = cfg.originalText;
+                if (cfg.customFieldType === 'name') displayText = record.name || "";
+                else if (cfg.customFieldType === 'date') displayText = record.date || "";
+                else if (cfg.customFieldType === 'id') displayText = record.id || "";
+
+                if (!displayText) continue;
+
+                const color = hexToRgb(cfg.fill);
+                let font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                if (cfg.fontFamily.toLowerCase().includes('times')) font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+                else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
+
+                // Calculate positions
+                const pdfFontSize = cfg.fontSize * 0.75 * scaleY; 
+                const textWidth = font.widthOfTextAtSize(displayText, pdfFontSize);
+                
+                let x = cfg.left * scaleX;
+                let y = height - (cfg.top * scaleY); // Flip Y axis
+
+                // Alignment logic
+                if (cfg.textAlign === 'center') x -= textWidth / 2;
+                else if (cfg.textAlign === 'right') x -= textWidth;
+
+                firstPage.drawText(displayText, {
+                    x: x,
+                    y: y - (pdfFontSize / 4), // Middle baseline adjustment
+                    size: pdfFontSize,
+                    font: font,
+                    color: rgb(color.r, color.g, color.b),
+                });
+            }
+            return { name: record.name, id: record.id, data: await pdfDoc.save() };
+        } 
+        
+        // Mode B: jsPDF Fallback (For Images or Flattened output)
         const vCanvas = new fabric.StaticCanvas(null, { width: templateData.width, height: templateData.height });
         return new Promise((resolve) => {
             fabric.util.loadImage(templateData.bg, (imgElement) => {
@@ -311,15 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
                     if (outputFormat === 'image') {
-                        const pageImg = vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 });
-                        pdf.addImage(pageImg, 'JPEG', 0, 0, templateData.width, templateData.height);
+                        pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateData.width, templateData.height);
                     } else {
                         pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
                         vCanvas.getObjects().forEach(o => {
                             if (o.type === 'textbox' || o.type === 'text') {
                                 let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                const calibratedSize = o.fontSize * 0.75;
-                                pdf.setFont(font, 'normal').setFontSize(calibratedSize).setTextColor(o.fill);
+                                pdf.setFont(font, 'normal').setFontSize(o.fontSize * 0.75).setTextColor(o.fill);
                                 pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
                             }
                         });
