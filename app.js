@@ -82,17 +82,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const val = namesTextarea.value.trim();
             if (val) {
                 val.split('\n').forEach(line => {
-                    const parts = line.split(',').map(s => s.trim());
+                    const parts = line.split('|').map(s => s.trim());
                     if (parts[0]) {
                         records.push({
-                            name: parts[0], 
-                            email: parts[1] || '', 
-                            date: '', 
+                            name: parts[0],
+                            email: parts[1] || '',
+                            date: '',
                             id: ''
                         });
                     }
-                });
-            }
+                });            }
         } else {
             const file = dataUpload.files[0];
             if (file) {
