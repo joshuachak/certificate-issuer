@@ -22,8 +22,11 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%234f46e5' /%3E%3Cstop offset='100%25' stop-color='%238b5cf6' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='6' width='24' height='20' rx='3' stroke='url(%23g)' stroke-width='2.5' fill='none'/%3E%3Cpath d='M10 13H22M10 18H18' stroke='url(%23g)' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='21' r='5' fill='white' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M23 19V23M21 21H25' stroke='url(%23g)' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:wght@300;400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.7">
+    <!-- Only Inter (UI) + Noto are loaded from Google. Cinzel/Lora/Montserrat/Dancing Script/Great Vibes
+         are intentionally NOT imported so the local Noto aliases in styles.css win, keeping the canvas
+         (and image-mode raster) identical to the Noto fonts embedded into text-over-PDF output. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1.0.8">
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -39,7 +42,7 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     
     <!-- Translation Data -->
-    <script src="i18n.js?v=1.0.7"></script>
+    <script src="i18n.js?v=1.0.8"></script>
 </head>
 <body>
     <div class="app-container">
@@ -289,6 +292,6 @@
             </main>
         </div>
     </div>
-    <script src="app.js?v=1.0.7"></script>
+    <script src="app.js?v=1.0.8"></script>
 </body>
 </html>

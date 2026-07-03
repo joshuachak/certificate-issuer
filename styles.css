@@ -19,6 +19,16 @@
     font-family: 'Montserrat';
     src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
 }
+/* Script fonts are classified as sans by isSerif(), so alias them to Noto Sans
+   too — keeps canvas/image-mode identical to the Noto Sans embedded by single-pdf. */
+@font-face {
+    font-family: 'Dancing Script';
+    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Great Vibes';
+    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+}
 
 :root {
     --primary: #4f46e5;
