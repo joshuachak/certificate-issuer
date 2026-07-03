@@ -122,24 +122,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // State for custom fields
     let customFields = []; // Array of { key: string, label: string }
     let parsedHeaders = ['name', 'email', 'date', 'id'];
-    let cachedChineseFontBytes = null;
+    let cachedSansFontBytes = null;
+    let cachedSerifFontBytes = null;
 
-    const CHINESE_FONT_URL = 'fonts/LXGWWenKaiLite-Regular.ttf';
+    const SANS_FONT_URL = 'fonts/NotoSansTC-Regular.ttf';
+    const SERIF_FONT_URL = 'fonts/NotoSerifTC-Regular.ttf';
 
-    async function loadChineseFont() {
-        if (cachedChineseFontBytes) return cachedChineseFontBytes;
+    async function loadSansFont() {
+        if (cachedSansFontBytes) return cachedSansFontBytes;
         progressContainer.style.display = 'block';
         progressFill.style.width = '20%';
-        progressText.innerText = "Downloading Chinese Font (約 13MB, 僅需下載一次)...";
-        
+        progressText.innerText = "Downloading Noto Sans Font (約 11MB, 僅需下載一次)...";
         try {
-            const res = await fetch(CHINESE_FONT_URL);
+            const res = await fetch(SANS_FONT_URL);
             if (!res.ok) throw new Error("字型伺服器回應錯誤");
             const buffer = await res.arrayBuffer();
-            cachedChineseFontBytes = new Uint8Array(buffer);
-            return cachedChineseFontBytes;
+            cachedSansFontBytes = new Uint8Array(buffer);
+            return cachedSansFontBytes;
         } catch (err) {
-            throw new Error("無法下載中文字型，請檢查您的網路連線：" + err.message);
+            throw new Error("無法下載 Noto Sans 字型，請檢查您的網路連線：" + err.message);
+        }
+    }
+
+    async function loadSerifFont() {
+        if (cachedSerifFontBytes) return cachedSerifFontBytes;
+        progressContainer.style.display = 'block';
+        progressFill.style.width = '20%';
+        progressText.innerText = "Downloading Noto Serif Font (約 16MB, 僅需下載一次)...";
+        try {
+            const res = await fetch(SERIF_FONT_URL);
+            if (!res.ok) throw new Error("字型伺服器回應錯誤");
+            const buffer = await res.arrayBuffer();
+            cachedSerifFontBytes = new Uint8Array(buffer);
+            return cachedSerifFontBytes;
+        } catch (err) {
+            throw new Error("無法下載 Noto Serif 字型，請檢查您的網路連線：" + err.message);
         }
     }
 
@@ -433,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
         const textObj = new fabric.Textbox(text, {
             left: canvas.width / 2, top: canvas.height / 2, width: canvas.width * 0.8,
-            fontSize: 60, fontFamily: 'Times New Roman', fill: '#000000', textAlign: 'center',
+            fontSize: 60, fontFamily: 'Noto Sans TC', fill: '#000000', textAlign: 'center',
             originX: 'center', originY: 'center', customFieldType: field 
         });
         canvas.add(textObj); canvas.setActiveObject(textObj);
@@ -677,13 +694,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Generation Logic ---
-    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat, chineseFontBytes, base64Font) {
+    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat, fonts) {
         // Mode A: PDF Overlay using pdf-lib (Preserves original PDF content)
         if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
             const pdfDoc = await PDFDocument.load(originalPDFBytes);
             
-            if (chineseFontBytes && window.fontkit) {
+            if (window.fontkit && (fonts.sansBytes || fonts.serifBytes)) {
                 pdfDoc.registerFontkit(window.fontkit);
             }
 
@@ -696,10 +713,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
             if (isNaN(scaleY) || !isFinite(scaleY)) scaleY = 1;
 
-            let customFont = null;
-            if (chineseFontBytes) {
-                customFont = await pdfDoc.embedFont(chineseFontBytes);
+            let sansFont = null;
+            if (fonts.sansBytes) {
+                sansFont = await pdfDoc.embedFont(fonts.sansBytes);
             }
+            let serifFont = null;
+            if (fonts.serifBytes) {
+                serifFont = await pdfDoc.embedFont(fonts.serifBytes);
+            }
+
+            const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+            const courierFont = await pdfDoc.embedFont(StandardFonts.Courier);
 
             for (const cfg of objectsConfig) {
                 let displayText = cfg.originalText;
@@ -720,12 +745,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const color = hexToRgb(cfg.fill);
                 let font;
-                if (/[^\x00-\x7F]/.test(displayText) && customFont) {
-                    font = customFont;
+                let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
+                let isCourier = cfg.fontFamily.toLowerCase().includes('courier');
+
+                if (isSerif) {
+                    font = serifFont || timesFont;
+                } else if (isCourier) {
+                    font = courierFont;
                 } else {
-                    font = customFont || await pdfDoc.embedFont(StandardFonts.Helvetica);
-                    if (cfg.fontFamily.toLowerCase().includes('times')) font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-                    else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
+                    font = sansFont || helveticaFont;
                 }
 
                 const rawWidth = typeof cfg.width === 'number' && !isNaN(cfg.width) ? cfg.width : 100;
@@ -826,23 +854,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
                             
-                            if (base64Font) {
-                                pdf.addFileToVFS('CustomFont.ttf', base64Font);
-                                pdf.addFont('CustomFont.ttf', 'CustomFont', 'normal');
+                            if (fonts.base64Sans) {
+                                pdf.addFileToVFS('NotoSansTC.ttf', fonts.base64Sans);
+                                pdf.addFont('NotoSansTC.ttf', 'NotoSansTC', 'normal');
+                            }
+                            if (fonts.base64Serif) {
+                                pdf.addFileToVFS('NotoSerifTC.ttf', fonts.base64Serif);
+                                pdf.addFont('NotoSerifTC.ttf', 'NotoSerifTC', 'normal');
                             }
 
                             vCanvas.getObjects().forEach(o => {
                                 if (o.type === 'textbox' || o.type === 'text') {
-                                    if (/[^\x00-\x7F]/.test(o.text) && base64Font) {
-                                        pdf.setFont('CustomFont', 'normal');
+                                    let isSerif = o.fontFamily === 'Noto Serif TC' || o.fontFamily.toLowerCase().includes('serif') || o.fontFamily.toLowerCase().includes('times') || o.fontFamily.toLowerCase().includes('lora') || o.fontFamily.toLowerCase().includes('cinzel');
+                                    let isCourier = o.fontFamily.toLowerCase().includes('courier');
+                                    
+                                    if (isSerif) {
+                                        if (fonts.base64Serif) pdf.setFont('NotoSerifTC', 'normal');
+                                        else pdf.setFont('times', 'normal');
+                                    } else if (isCourier) {
+                                        pdf.setFont('courier', 'normal');
                                     } else {
-                                        let hasCustom = !!base64Font;
-                                        let isTimes = o.fontFamily.toLowerCase().includes('times');
-                                        let isCourier = o.fontFamily.toLowerCase().includes('courier');
-                                        
-                                        if (isTimes) pdf.setFont('times', 'normal');
-                                        else if (isCourier) pdf.setFont('courier', 'normal');
-                                        else if (hasCustom) pdf.setFont('CustomFont', 'normal');
+                                        if (fonts.base64Sans) pdf.setFont('NotoSansTC', 'normal');
                                         else pdf.setFont('helvetica', 'normal');
                                     }
                                     pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
@@ -882,7 +914,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let completed = 0;
         const dict = translations[currentLang];
 
-        let needChineseFont = false;
+        let needSansFont = false;
+        let needSerifFont = false;
+
+        for (const cfg of objectsConfig) {
+            if (cfg.fontFamily === 'Noto Sans TC') needSansFont = true;
+            if (cfg.fontFamily === 'Noto Serif TC') needSerifFont = true;
+        }
+
         if (outputFormat === 'text') {
             for (const r of records) {
                 for (const cfg of objectsConfig) {
@@ -897,25 +936,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     if (displayText && /[^\x00-\x7F]/.test(displayText)) {
-                        needChineseFont = true;
-                        break;
+                        let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
+                        if (isSerif) needSerifFont = true;
+                        else needSansFont = true;
                     }
                 }
-                if (needChineseFont) break;
+                if (needSansFont && needSerifFont) break;
             }
         }
 
-        let fontBytes = null;
-        let base64Font = null;
+        let sansFontBytes = null;
+        let serifFontBytes = null;
+        let base64SansFont = null;
+        let base64SerifFont = null;
         try {
-            if (needChineseFont) {
-                fontBytes = await loadChineseFont();
-                if (fontBytes) {
-                    progressText.innerText = "Preparing font encoding...";
-                    base64Font = await new Promise((resolve) => {
+            if (needSansFont) {
+                sansFontBytes = await loadSansFont();
+                if (sansFontBytes) {
+                    progressText.innerText = "Preparing Noto Sans encoding...";
+                    base64SansFont = await new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(new Blob([fontBytes]));
+                        reader.readAsDataURL(new Blob([sansFontBytes]));
+                    });
+                }
+            }
+            if (needSerifFont) {
+                serifFontBytes = await loadSerifFont();
+                if (serifFontBytes) {
+                    progressText.innerText = "Preparing Noto Serif encoding...";
+                    base64SerifFont = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(new Blob([serifFontBytes]));
                     });
                 }
             }
@@ -940,13 +993,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { PDFDocument, rgb, StandardFonts } = PDFLib;
                 
                 const mainPdfDoc = await PDFDocument.create();
-                if (fontBytes && window.fontkit) {
+                if (window.fontkit && (sansFontBytes || serifFontBytes)) {
                     mainPdfDoc.registerFontkit(window.fontkit);
                 }
 
-                let customFont = null;
-                if (fontBytes) {
-                    customFont = await mainPdfDoc.embedFont(fontBytes);
+                let sansFont = null;
+                if (sansFontBytes) {
+                    sansFont = await mainPdfDoc.embedFont(sansFontBytes);
+                }
+                let serifFont = null;
+                if (serifFontBytes) {
+                    serifFont = await mainPdfDoc.embedFont(serifFontBytes);
                 }
                 
                 const helveticaFont = await mainPdfDoc.embedFont(StandardFonts.Helvetica);
@@ -984,12 +1041,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const color = hexToRgb(cfg.fill);
                         let font;
-                        if (/[^\x00-\x7F]/.test(displayText) && customFont) {
-                            font = customFont;
+                        let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
+                        let isCourier = cfg.fontFamily.toLowerCase().includes('courier');
+
+                        if (isSerif) {
+                            font = serifFont || timesFont;
+                        } else if (isCourier) {
+                            font = courierFont;
                         } else {
-                            font = customFont || helveticaFont;
-                            if (cfg.fontFamily.toLowerCase().includes('times')) font = timesFont;
-                            else if (cfg.fontFamily.toLowerCase().includes('courier')) font = courierFont;
+                            font = sansFont || helveticaFont;
                         }
 
                         const rawWidth = typeof cfg.width === 'number' && !isNaN(cfg.width) ? cfg.width : 100;
@@ -1092,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 for (let i = 0; i < records.length; i += batchSize) {
                     const batch = records.slice(i, i + batchSize);
-                    const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat, fontBytes, base64Font)));
+                    const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat, { sansBytes: sansFontBytes, serifBytes: serifFontBytes, base64Sans: base64SansFont, base64Serif: base64SerifFont })));
                     results.forEach((res, idx) => {
                         const record = batch[idx];
                         let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
