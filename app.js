@@ -1001,12 +1001,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const xMin = left * scaleX;
                 const yMax = height - (top * scaleY);
                 const pdfWidth = actualWidth * scaleX;
-                const pdfHeight = actualHeight * scaleY;
                 const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
                 const pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                 const lines = displayText.split('\n');
-                const lineSpacing = pdfFontSize * 1.2;
+                const lineSpacing = pdfFontSize * 1.31; // fabric lineHeight(1.16) × _fontSizeMult(1.13)
 
                 for (let j = 0; j < lines.length; j++) {
                     const lineText = lines[j];
@@ -1021,12 +1020,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         xStart = xMin + pdfWidth - lineWidth;
                     }
 
-                    let yBaseline;
-                    if (lines.length === 1) {
-                        yBaseline = yMax - pdfHeight / 2 - (pdfFontSize * 0.15);
-                    } else {
-                        yBaseline = yMax - (pdfFontSize * 0.85) - (j * lineSpacing);
-                    }
+                    // Fabric draws the first line's alphabetic baseline at (box top + ascent),
+                    // where ascent ≈ 0.87×fontSize for Noto Sans/Serif. Match it exactly so the
+                    // selectable text lands where the WYSIWYG canvas (image mode) shows it.
+                    // Height-independent by design; verified within 1px via pdf.js round-trip.
+                    const yBaseline = yMax - (pdfFontSize * 0.87) - (j * lineSpacing);
 
                     firstPage.drawText(lineText || "", {
                         x: xStart,
@@ -1297,12 +1295,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const xMin = left * scaleX;
                         const yMax = height - (top * scaleY);
                         const pdfWidth = actualWidth * scaleX;
-                        const pdfHeight = actualHeight * scaleY;
                         const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
                         const pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                         const lines = displayText.split('\n');
-                        const lineSpacing = pdfFontSize * 1.2;
+                        const lineSpacing = pdfFontSize * 1.31; // fabric lineHeight(1.16) × _fontSizeMult(1.13)
 
                         for (let j = 0; j < lines.length; j++) {
                             const lineText = lines[j];
@@ -1317,12 +1314,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 xStart = xMin + pdfWidth - lineWidth;
                             }
 
-                            let yBaseline;
-                            if (lines.length === 1) {
-                                yBaseline = yMax - pdfHeight / 2 - (pdfFontSize * 0.15);
-                            } else {
-                                yBaseline = yMax - (pdfFontSize * 0.85) - (j * lineSpacing);
-                            }
+                            // Fabric draws the first line's alphabetic baseline at (box top + ascent),
+                            // where ascent ≈ 0.87×fontSize for Noto Sans/Serif. Match it exactly so the
+                            // selectable text lands where the WYSIWYG canvas (image mode) shows it.
+                            // Height-independent by design; verified within 1px via pdf.js round-trip.
+                            const yBaseline = yMax - (pdfFontSize * 0.87) - (j * lineSpacing);
 
                             page.drawText(lineText || "", {
                                 x: xStart,
