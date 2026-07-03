@@ -1252,12 +1252,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
                 if (isNaN(scaleY) || !isFinite(scaleY)) scaleY = 1;
 
+                // Copy all template pages in ONE copyPages call so pdf-lib's object copier
+                // shares the template's background image across every page. Copying once per
+                // record duplicated the ~6MB background on each page (hundreds of MB for large
+                // batches); batching keeps the whole combined file at roughly one template size.
+                const copiedPages = await mainPdfDoc.copyPages(srcDoc, new Array(records.length).fill(0));
+                copiedPages.forEach(p => mainPdfDoc.addPage(p));
+
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
-                    const [copiedPage] = await mainPdfDoc.copyPages(srcDoc, [0]);
-                    mainPdfDoc.addPage(copiedPage);
-
-                    const page = mainPdfDoc.getPages()[mainPdfDoc.getPageCount() - 1];
+                    const page = mainPdfDoc.getPage(i);
 
                     for (const cfg of objectsConfig) {
                         let displayText = cfg.originalText;
