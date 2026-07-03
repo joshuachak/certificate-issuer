@@ -878,7 +878,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                         else pdf.setFont('helvetica', 'normal');
                                     }
                                     pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
-                                    pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
+                                    
+                                    let actualW = o.getScaledWidth();
+                                    let actualH = o.getScaledHeight();
+                                    
+                                    let absLeft = o.left;
+                                    if (o.originX === 'center') absLeft = o.left - actualW / 2;
+                                    else if (o.originX === 'right') absLeft = o.left - actualW;
+                                    
+                                    let anchorX = absLeft;
+                                    if (o.textAlign === 'center') anchorX = absLeft + actualW / 2;
+                                    else if (o.textAlign === 'right') anchorX = absLeft + actualW;
+                                    
+                                    let absTop = o.top;
+                                    if (o.originY === 'center') absTop = o.top - actualH / 2;
+                                    else if (o.originY === 'bottom') absTop = o.top - actualH;
+                                    let anchorY = absTop + actualH / 2;
+                                    
+                                    pdf.text(o.text, anchorX, anchorY, { align: o.textAlign, baseline: 'middle', maxWidth: actualW });
                                 }
                             });
                         }
@@ -1230,7 +1247,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else pdf.setFont('helvetica', 'normal');
                             }
                             pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
-                            pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
+                            
+                            let actualW = o.getScaledWidth();
+                            let actualH = o.getScaledHeight();
+                            
+                            let absLeft = o.left;
+                            if (o.originX === 'center') absLeft = o.left - actualW / 2;
+                            else if (o.originX === 'right') absLeft = o.left - actualW;
+                            
+                            let anchorX = absLeft;
+                            if (o.textAlign === 'center') anchorX = absLeft + actualW / 2;
+                            else if (o.textAlign === 'right') anchorX = absLeft + actualW;
+                            
+                            let absTop = o.top;
+                            if (o.originY === 'center') absTop = o.top - actualH / 2;
+                            else if (o.originY === 'bottom') absTop = o.top - actualH;
+                            let anchorY = absTop + actualH / 2;
+                            
+                            pdf.text(o.text, anchorX, anchorY, { align: o.textAlign, baseline: 'middle', maxWidth: actualW });
                         }
                     });
 
