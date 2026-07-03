@@ -124,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let parsedHeaders = ['name', 'email', 'date', 'id'];
     let cachedSansFontBytes = null;
     let cachedSerifFontBytes = null;
+    
+    // Remember last textbox styles for inheriting in new textboxes
+    let lastTextSettings = {
+        fontSize: 60,
+        fontFamily: 'Noto Sans TC',
+        fill: '#000000',
+        textAlign: 'center'
+    };
 
     const SANS_FONT_URL = 'fonts/NotoSansTC-Regular.ttf';
     const SERIF_FONT_URL = 'fonts/NotoSerifTC-Regular.ttf';
@@ -450,7 +458,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
         const textObj = new fabric.Textbox(text, {
             left: canvas.width / 2, top: canvas.height / 2, width: canvas.width * 0.8,
-            fontSize: 60, fontFamily: 'Noto Sans TC', fill: '#000000', textAlign: 'center',
+            fontSize: lastTextSettings.fontSize,
+            fontFamily: lastTextSettings.fontFamily,
+            fill: lastTextSettings.fill,
+            textAlign: lastTextSettings.textAlign,
             originX: 'center', originY: 'center', customFieldType: field 
         });
         canvas.add(textObj); canvas.setActiveObject(textObj);
@@ -483,6 +494,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 textColorInput.value = obj.fill;
                 textAlignSelect.value = obj.textAlign;
                 fontFamilySelect.value = obj.fontFamily;
+                
+                // Store selected textbox styles
+                lastTextSettings = {
+                    fontSize: obj.fontSize || 60,
+                    fontFamily: obj.fontFamily || 'Noto Sans TC',
+                    fill: obj.fill || '#000000',
+                    textAlign: obj.textAlign || 'center'
+                };
             } else if (obj.isGuideLine) {
                 // For guide lines, hide styling but allow deletion
                 stylingControls.style.display = 'none';
@@ -671,19 +690,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fontSizeInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
-        if (obj) { obj.set('fontSize', parseInt(e.target.value)); canvas.renderAll(); }
+        if (obj) {
+            const val = parseInt(e.target.value) || 60;
+            obj.set('fontSize', val);
+            canvas.renderAll();
+            lastTextSettings.fontSize = val;
+        }
     });
     textColorInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
-        if (obj) { obj.set('fill', e.target.value); canvas.renderAll(); }
+        if (obj) {
+            obj.set('fill', e.target.value);
+            canvas.renderAll();
+            lastTextSettings.fill = e.target.value;
+        }
     });
     textAlignSelect.addEventListener('change', (e) => {
         const obj = canvas.getActiveObject();
-        if (obj) { obj.set('textAlign', e.target.value); canvas.renderAll(); }
+        if (obj) {
+            obj.set('textAlign', e.target.value);
+            canvas.renderAll();
+            lastTextSettings.textAlign = e.target.value;
+        }
     });
     fontFamilySelect.addEventListener('change', (e) => {
         const obj = canvas.getActiveObject();
-        if (obj) { obj.set('fontFamily', e.target.value); canvas.renderAll(); }
+        if (obj) {
+            obj.set('fontFamily', e.target.value);
+            canvas.renderAll();
+            lastTextSettings.fontFamily = e.target.value;
+        }
     });
     btnDelete.addEventListener('click', () => {
         canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
@@ -694,7 +730,12 @@ document.addEventListener('DOMContentLoaded', () => {
         swatch.addEventListener('click', () => {
             const color = swatch.dataset.color;
             const obj = canvas.getActiveObject();
-            if (obj) { obj.set('fill', color); canvas.renderAll(); if(textColorInput) textColorInput.value = color; }
+            if (obj) {
+                obj.set('fill', color);
+                canvas.renderAll();
+                if(textColorInput) textColorInput.value = color;
+                lastTextSettings.fill = color;
+            }
         });
     });
 
