@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (/[^\x00-\x7F]/.test(displayText) && customFont) {
                     font = customFont;
                 } else {
-                    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                    font = customFont || await pdfDoc.embedFont(StandardFonts.Helvetica);
                     if (cfg.fontFamily.toLowerCase().includes('times')) font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
                     else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
                 }
@@ -828,8 +828,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (/[^\x00-\x7F]/.test(o.text) && base64Font) {
                                         pdf.setFont('CustomFont', 'normal');
                                     } else {
-                                        let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                        pdf.setFont(font, 'normal');
+                                        let hasCustom = !!base64Font;
+                                        let isTimes = o.fontFamily.toLowerCase().includes('times');
+                                        let isCourier = o.fontFamily.toLowerCase().includes('courier');
+                                        
+                                        if (isTimes) pdf.setFont('times', 'normal');
+                                        else if (isCourier) pdf.setFont('courier', 'normal');
+                                        else if (hasCustom) pdf.setFont('CustomFont', 'normal');
+                                        else pdf.setFont('helvetica', 'normal');
                                     }
                                     pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
                                     pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
@@ -971,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (/[^\x00-\x7F]/.test(displayText) && customFont) {
                             font = customFont;
                         } else {
-                            font = helveticaFont;
+                            font = customFont || helveticaFont;
                             if (cfg.fontFamily.toLowerCase().includes('times')) font = timesFont;
                             else if (cfg.fontFamily.toLowerCase().includes('courier')) font = courierFont;
                         }
