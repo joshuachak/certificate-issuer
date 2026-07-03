@@ -677,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Generation Logic ---
-    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat, chineseFontBytes) {
+    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat, chineseFontBytes, base64Font) {
         // Mode A: PDF Overlay using pdf-lib (Preserves original PDF content)
         if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
@@ -782,19 +782,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
                             
-                            if (chineseFontBytes) {
-                                const base64Font = await new Promise((res) => {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => res(reader.result.split(',')[1]);
-                                    reader.readAsDataURL(new Blob([chineseFontBytes]));
-                                });
+                            if (base64Font) {
                                 pdf.addFileToVFS('CustomFont.ttf', base64Font);
                                 pdf.addFont('CustomFont.ttf', 'CustomFont', 'normal');
                             }
 
                             vCanvas.getObjects().forEach(o => {
                                 if (o.type === 'textbox' || o.type === 'text') {
-                                    if (/[^\x00-\x7F]/.test(o.text) && chineseFontBytes) {
+                                    if (/[^\x00-\x7F]/.test(o.text) && base64Font) {
                                         pdf.setFont('CustomFont', 'normal');
                                     } else {
                                         let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
@@ -825,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGenerate.disabled = true; progressContainer.style.display = 'block';
 
         const objectsConfig = canvas.getObjects()
-            .filter(o => !o.isGuideLine) // Filter out helper guide lines!
+            .filter(o => !o.isGuideLine) 
             .map(o => ({
                 originalText: o.text, left: o.left, top: o.top, width: o.width, fontSize: o.fontSize,
                 fontFamily: o.fontFamily, fill: o.fill, textAlign: o.textAlign, originX: o.originX,
@@ -837,7 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let completed = 0;
         const dict = translations[currentLang];
 
-        // 1. Detect if custom Chinese font is needed
         let needChineseFont = false;
         if (outputFormat === 'text') {
             for (const r of records) {
@@ -862,9 +856,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let fontBytes = null;
+        let base64Font = null;
         try {
             if (needChineseFont) {
                 fontBytes = await loadChineseFont();
+                if (fontBytes) {
+                    progressText.innerText = "Preparing font encoding...";
+                    base64Font = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(new Blob([fontBytes]));
+                    });
+                }
             }
 
             const uniqueHeaders = [];
@@ -882,31 +885,129 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalHeaders = uniqueHeaders.filter(h => h && h.trim() !== '');
             let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
 
-            for (let i = 0; i < records.length; i += batchSize) {
-                const batch = records.slice(i, i + batchSize);
-                const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat, fontBytes)));
-                results.forEach((res, idx) => {
-                    const record = batch[idx];
-                    let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
-                    let idPart = res.id ? `_${String(res.id).replace(/[^a-z0-9]/gi, '_')}` : "";
+            // High-Performance Path: PDF Overlay using pdf-lib (Preserves original PDF content)
+            if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
+                const { PDFDocument, rgb, StandardFonts } = PDFLib;
+                
+                const mainPdfDoc = await PDFDocument.create();
+                if (fontBytes && window.fontkit) {
+                    mainPdfDoc.registerFontkit(window.fontkit);
+                }
+
+                let customFont = null;
+                if (fontBytes) {
+                    customFont = await mainPdfDoc.embedFont(fontBytes);
+                }
+                
+                const helveticaFont = await mainPdfDoc.embedFont(StandardFonts.Helvetica);
+                const timesFont = await mainPdfDoc.embedFont(StandardFonts.TimesRoman);
+                const courierFont = await mainPdfDoc.embedFont(StandardFonts.Courier);
+
+                const srcDoc = await PDFDocument.load(originalPDFBytes);
+                const templatePage = srcDoc.getPages()[0];
+                const { width, height } = templatePage.getSize();
+                const scaleX = width / templateImageWidth;
+                const scaleY = height / templateImageHeight;
+
+                for (let i = 0; i < records.length; i++) {
+                    const record = records[i];
+                    const [copiedPage] = await mainPdfDoc.copyPages(srcDoc, [0]);
+                    mainPdfDoc.addPage(copiedPage);
+
+                    const page = mainPdfDoc.getPages()[mainPdfDoc.getPageCount() - 1];
+
+                    for (const cfg of objectsConfig) {
+                        let displayText = cfg.originalText;
+                        const fieldType = cfg.customFieldType;
+                        if (fieldType) {
+                            if (fieldType === 'name') displayText = record.name || "";
+                            else if (fieldType === 'date') displayText = record.date || "";
+                            else if (fieldType === 'id') displayText = record.id || "";
+                            else {
+                                displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
+                            }
+                        }
+
+                        if (!displayText) continue;
+
+                        const color = hexToRgb(cfg.fill);
+                        let font;
+                        if (/[^\x00-\x7F]/.test(displayText) && customFont) {
+                            font = customFont;
+                        } else {
+                            font = helveticaFont;
+                            if (cfg.fontFamily.toLowerCase().includes('times')) font = timesFont;
+                            else if (cfg.fontFamily.toLowerCase().includes('courier')) font = courierFont;
+                        }
+
+                        const pdfFontSize = cfg.fontSize * 1.0 * scaleY; 
+                        const textWidth = font.widthOfTextAtSize(displayText, pdfFontSize);
+                        
+                        let x = cfg.left * scaleX;
+                        let y = height - (cfg.top * scaleY);
+
+                        if (cfg.textAlign === 'center') x -= textWidth / 2;
+                        else if (cfg.textAlign === 'right') x -= textWidth;
+
+                        page.drawText(displayText, {
+                            x: x,
+                            y: y - (pdfFontSize / 4), 
+                            size: pdfFontSize,
+                            font: font,
+                            color: rgb(color.r, color.g, color.b),
+                        });
+                    }
+
+                    completed++;
+                    progressFill.style.width = `${(completed / records.length) * 100}%`;
+                    progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+                }
+
+                progressText.innerText = "Saving certificates...";
+                for (let i = 0; i < records.length; i++) {
+                    const record = records[i];
+                    const singleDoc = await PDFDocument.create();
+                    const [pageCopy] = await singleDoc.copyPages(mainPdfDoc, [i]);
+                    singleDoc.addPage(pageCopy);
+                    const singlePdfBytes = await singleDoc.save();
+
+                    let namePart = (record.name || `student_${i + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
+                    let idPart = record.id ? `_${String(record.id).replace(/[^a-z0-9]/gi, '_')}` : "";
                     const filename = `${originalFileName}${idPart}_${namePart}.pdf`;
-                    
-                    zip.file(filename, res.data);
-                    
-                    // Add to mail merge CSV
+                    zip.file(filename, singlePdfBytes);
+
                     const rowValues = finalHeaders.map(h => {
                         const val = record[h] || record[h.toLowerCase()] || record[h.toUpperCase()] || '';
                         return `"${val.replace(/"/g, '""')}"`;
                     });
                     rowValues.push(`"${filename}"`);
                     mailMergeData += rowValues.join(',') + '\n';
-                });
-                completed += batch.length;
-                progressFill.style.width = `${(completed / records.length) * 100}%`;
-                progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+                }
+            } else {
+                for (let i = 0; i < records.length; i += batchSize) {
+                    const batch = records.slice(i, i + batchSize);
+                    const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat, fontBytes, base64Font)));
+                    results.forEach((res, idx) => {
+                        const record = batch[idx];
+                        let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
+                        let idPart = res.id ? `_${String(res.id).replace(/[^a-z0-9]/gi, '_')}` : "";
+                        const filename = `${originalFileName}${idPart}_${namePart}.pdf`;
+                        
+                        zip.file(filename, res.data);
+                        
+                        const rowValues = finalHeaders.map(h => {
+                            const val = record[h] || record[h.toLowerCase()] || record[h.toUpperCase()] || '';
+                            return `"${val.replace(/"/g, '""')}"`;
+                        });
+                        rowValues.push(`"${filename}"`);
+                        mailMergeData += rowValues.join(',') + '\n';
+                    });
+                    completed += batch.length;
+                    progressFill.style.width = `${(completed / records.length) * 100}%`;
+                    progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+                }
             }
             
-            // Download mail merge file separately if there is at least one email provided
             if (records.some(r => r.email)) {
                 const blob = new Blob(["\uFEFF" + mailMergeData], { type: 'text/csv;charset=utf-8;' });
                 saveAs(blob, "mail_merge.csv");
