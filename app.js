@@ -575,9 +575,159 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.discardActiveObject().renderAll();
     }
 
+    function exportLayout() {
+        const textboxes = canvas.getObjects()
+            .filter(o => o.type === 'textbox' || o.type === 'text')
+            .map(o => ({
+                left: o.left,
+                top: o.top,
+                width: o.width,
+                height: o.height,
+                scaleX: o.scaleX,
+                scaleY: o.scaleY,
+                fontSize: o.fontSize,
+                fontFamily: o.fontFamily,
+                fill: o.fill,
+                textAlign: o.textAlign,
+                originalText: o.text,
+                customFieldType: o.customFieldType,
+                originX: o.originX,
+                originY: o.originY
+            }));
+            
+        const guides = canvas.getObjects()
+            .filter(o => o.isGuideLine)
+            .map(o => ({
+                guideType: o.guideType,
+                left: o.left,
+                top: o.top
+            }));
+            
+        const layoutData = {
+            version: "1.0",
+            textboxes,
+            guides
+        };
+        
+        const blob = new Blob([JSON.stringify(layoutData, null, 2)], { type: 'application/json' });
+        saveAs(blob, `certificate_layout_${new Date().toISOString().slice(0,10)}.json`);
+    }
+
+    function importLayout(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const layoutData = JSON.parse(evt.target.result);
+                if (!layoutData || !Array.isArray(layoutData.textboxes)) {
+                    throw new Error("Invalid structure");
+                }
+                
+                // 1. Clear existing textboxes and guides
+                const toRemove = canvas.getObjects().filter(o => o.type === 'textbox' || o.type === 'text' || o.isGuideLine);
+                toRemove.forEach(o => canvas.remove(o));
+                
+                // 2. Add textboxes
+                layoutData.textboxes.forEach(cfg => {
+                    const textbox = new fabric.Textbox(cfg.originalText || "[Text]", {
+                        left: cfg.left,
+                        top: cfg.top,
+                        width: cfg.width,
+                        height: cfg.height,
+                        scaleX: cfg.scaleX || 1,
+                        scaleY: cfg.scaleY || 1,
+                        fontSize: cfg.fontSize,
+                        fontFamily: cfg.fontFamily,
+                        fill: cfg.fill,
+                        textAlign: cfg.textAlign,
+                        customFieldType: cfg.customFieldType,
+                        originX: cfg.originX || 'center',
+                        originY: cfg.originY || 'center',
+                        cornerColor: '#4f46e5',
+                        cornerStrokeColor: '#4f46e5',
+                        borderColor: '#4f46e5',
+                        cornerSize: 8,
+                        transparentCorners: false,
+                        padding: 5
+                    });
+                    
+                    // Enable/disable standard scaling/controls
+                    textbox.setControlsVisibility({
+                        mt: false,
+                        mb: false,
+                        ml: false,
+                        mr: false,
+                        mtr: true // rotation
+                    });
+                    
+                    canvas.add(textbox);
+                });
+                
+                // 3. Add guides
+                if (Array.isArray(layoutData.guides)) {
+                    layoutData.guides.forEach(g => {
+                        if (g.guideType === 'vertical') {
+                            const line = new fabric.Line([g.left, 0, g.left, canvas.height], {
+                                stroke: '#a855f7',
+                                strokeWidth: 1,
+                                strokeDashArray: [5, 5],
+                                selectable: true,
+                                hasControls: false,
+                                hasBorders: false,
+                                isGuideLine: true,
+                                guideType: 'vertical',
+                                hoverCursor: 'ew-resize',
+                                moveCursor: 'ew-resize',
+                                padding: 15
+                            });
+                            canvas.add(line);
+                        } else if (g.guideType === 'horizontal') {
+                            const line = new fabric.Line([0, g.top, canvas.width, g.top], {
+                                stroke: '#a855f7',
+                                strokeWidth: 1,
+                                strokeDashArray: [5, 5],
+                                selectable: true,
+                                hasControls: false,
+                                hasBorders: false,
+                                isGuideLine: true,
+                                guideType: 'horizontal',
+                                hoverCursor: 'ns-resize',
+                                moveCursor: 'ns-resize',
+                                padding: 15
+                            });
+                            canvas.add(line);
+                        }
+                    });
+                }
+                
+                canvas.renderAll();
+                updatePreview();
+                
+                // Clean up file input value so same file can be selected again
+                e.target.value = '';
+            } catch (err) {
+                console.error("Error importing layout:", err);
+                const dict = translations[currentLang];
+                alert(dict.alert_invalid_layout || "Invalid layout configuration file.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
     if (btnAddVGuide) btnAddVGuide.addEventListener('click', addVerticalGuide);
     if (btnAddHGuide) btnAddHGuide.addEventListener('click', addHorizontalGuide);
     if (btnClearGuides) btnClearGuides.addEventListener('click', clearGuides);
+
+    // --- Layout Backup (Import/Export) ---
+    const btnExportLayout = document.getElementById('export-layout-btn');
+    const btnImportLayout = document.getElementById('import-layout-btn');
+    const layoutFileInput = document.getElementById('layout-file-input');
+
+    if (btnExportLayout) btnExportLayout.addEventListener('click', exportLayout);
+    if (btnImportLayout) btnImportLayout.addEventListener('click', () => layoutFileInput.click());
+    if (layoutFileInput) layoutFileInput.addEventListener('change', importLayout);
 
     // Magnetic snapping on drag
     canvas.on('object:moving', (e) => {

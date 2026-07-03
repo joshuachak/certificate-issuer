@@ -42,7 +42,11 @@ const translations = {
     prev_btn: "Previous",
     next_btn: "Next",
     preview_help: "Cycle through your list to check alignment.",
-    view_github: "GitHub"
+    view_github: "GitHub",
+    layout_template_title: "Layout Backup",
+    export_layout: "Export Layout",
+    import_layout: "Import Layout",
+    alert_invalid_layout: "Invalid layout configuration file."
   },
   "zh-TW": {
     app_title: "出Cert神器-零幀出Cert",
@@ -87,7 +91,11 @@ const translations = {
     prev_btn: "上一個",
     next_btn: "下一個",
     preview_help: "循環切換名單以檢查對齊效果。",
-    view_github: "GitHub 源碼"
+    view_github: "GitHub 源碼",
+    layout_template_title: "版面設定備份",
+    export_layout: "匯出設定",
+    import_layout: "匯入設定",
+    alert_invalid_layout: "無效的版面設定檔案。"
   },
   "zh-CN": {
     app_title: "出Cert神器-零帧出Cert",
@@ -132,7 +140,11 @@ const translations = {
     prev_btn: "上一个",
     next_btn: "下一个",
     preview_help: "循环切换名单以检查对齐效果。",
-    view_github: "GitHub 源码"
+    view_github: "GitHub 源码",
+    layout_template_title: "版面设置备份",
+    export_layout: "导出设置",
+    import_layout: "导入设置",
+    alert_invalid_layout: "无效的版面设置文件。"
   },
   ja: {
     app_title: "CertStudio",
