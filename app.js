@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressText = document.getElementById('progress-text');
     const editorPanel = document.querySelector('.editor-panel');
     const languageSelect = document.getElementById('language-select');
+    const btnAddVGuide = document.getElementById('add-v-guide-btn');
+    const btnAddHGuide = document.getElementById('add-h-guide-btn');
+    const btnClearGuides = document.getElementById('clear-guides-btn');
     
     // Preview Elements
     const previewSection = document.getElementById('preview-section');
@@ -56,19 +59,31 @@ document.addEventListener('DOMContentLoaded', () => {
             custom_fields_title: "Custom Fields",
             custom_field_placeholder: "e.g. Score",
             add_custom_field_btn: "+ Add",
-            remove_field_tooltip: "Remove Field"
+            remove_field_tooltip: "Remove Field",
+            guides_title: "Alignment Guides",
+            add_v_guide: "+ Vertical Guide",
+            add_h_guide: "+ Horizontal Guide",
+            clear_guides: "Clear All Guides"
         },
         "zh-TW": {
             custom_fields_title: "自訂欄位",
             custom_field_placeholder: "例如：成績",
             add_custom_field_btn: "+ 新增",
-            remove_field_tooltip: "移除欄位"
+            remove_field_tooltip: "移除欄位",
+            guides_title: "對齊輔助線",
+            add_v_guide: "+ 垂直輔助線",
+            add_h_guide: "+ 水平輔助線",
+            clear_guides: "清除所有輔助線"
         },
         "zh-CN": {
             custom_fields_title: "自定义字段",
             custom_field_placeholder: "例如：成绩",
             add_custom_field_btn: "+ 新增",
-            remove_field_tooltip: "移除字段"
+            remove_field_tooltip: "移除字段",
+            guides_title: "对齐辅助线",
+            add_v_guide: "+ 垂直辅助线",
+            add_h_guide: "+ 水平辅助线",
+            clear_guides: "清除所有辅助线"
         }
     };
     
@@ -414,14 +429,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function onObjectSelected(e) {
         const obj = e.selected[0];
-        if (obj && obj.type === 'textbox') {
-            stylingControls.style.display = 'block';
-            alignmentControls.style.display = 'block';
-            btnDelete.disabled = false;
-            fontSizeInput.value = obj.fontSize;
-            textColorInput.value = obj.fill;
-            textAlignSelect.value = obj.textAlign;
-            fontFamilySelect.value = obj.fontFamily;
+        if (obj) {
+            if (obj.type === 'textbox') {
+                stylingControls.style.display = 'block';
+                alignmentControls.style.display = 'block';
+                btnDelete.disabled = false;
+                fontSizeInput.value = obj.fontSize;
+                textColorInput.value = obj.fill;
+                textAlignSelect.value = obj.textAlign;
+                fontFamilySelect.value = obj.fontFamily;
+            } else if (obj.isGuideLine) {
+                // For guide lines, hide styling but allow deletion
+                stylingControls.style.display = 'none';
+                alignmentControls.style.display = 'none';
+                btnDelete.disabled = false;
+            }
         }
     }
     
@@ -430,6 +452,130 @@ document.addEventListener('DOMContentLoaded', () => {
         alignmentControls.style.display = 'none';
         btnDelete.disabled = true;
     }
+
+    // --- Alignment Guides & Snapping Logic ---
+    function addVerticalGuide() {
+        if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
+        const line = new fabric.Line([canvas.width / 2, 0, canvas.width / 2, canvas.height], {
+            stroke: '#8b5cf6',
+            strokeWidth: 1.5,
+            strokeDashArray: [5, 5],
+            selectable: true,
+            hasControls: false,
+            hasBorders: false,
+            isGuideLine: true,
+            guideType: 'vertical',
+            hoverCursor: 'ew-resize',
+            lockMovementY: true
+        });
+        canvas.add(line);
+        canvas.setActiveObject(line);
+        canvas.renderAll();
+    }
+
+    function addHorizontalGuide() {
+        if (!templateLoaded) return alert(translations[currentLang].alert_upload_template);
+        const line = new fabric.Line([0, canvas.height / 2, canvas.width, canvas.height / 2], {
+            stroke: '#8b5cf6',
+            strokeWidth: 1.5,
+            strokeDashArray: [5, 5],
+            selectable: true,
+            hasControls: false,
+            hasBorders: false,
+            isGuideLine: true,
+            guideType: 'horizontal',
+            hoverCursor: 'ns-resize',
+            lockMovementX: true
+        });
+        canvas.add(line);
+        canvas.setActiveObject(line);
+        canvas.renderAll();
+    }
+
+    function clearGuides() {
+        const guides = canvas.getObjects().filter(o => o.isGuideLine);
+        guides.forEach(g => canvas.remove(g));
+        canvas.discardActiveObject().renderAll();
+    }
+
+    if (btnAddVGuide) btnAddVGuide.addEventListener('click', addVerticalGuide);
+    if (btnAddHGuide) btnAddHGuide.addEventListener('click', addHorizontalGuide);
+    if (btnClearGuides) btnClearGuides.addEventListener('click', clearGuides);
+
+    // Magnetic snapping on drag
+    canvas.on('object:moving', (e) => {
+        const obj = e.target;
+        if (!obj || obj.isGuideLine) return;
+
+        const rect = obj.getBoundingRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const snapThreshold = 15;
+
+        let snappedX = false;
+        let snappedY = false;
+
+        // Reset guide line styles
+        canvas.getObjects().forEach(o => {
+            if (o.isGuideLine) {
+                o.set({ stroke: '#8b5cf6', strokeWidth: 1.5 });
+            }
+        });
+
+        canvas.getObjects().forEach(o => {
+            if (!o.isGuideLine) return;
+
+            if (o.guideType === 'vertical') {
+                if (snappedX) return;
+                const guideX = o.left;
+                
+                // Snap center, left, or right edges
+                if (Math.abs(centerX - guideX) < snapThreshold) {
+                    obj.set({ left: obj.left + (guideX - centerX) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedX = true;
+                } else if (Math.abs(rect.left - guideX) < snapThreshold) {
+                    obj.set({ left: obj.left + (guideX - rect.left) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedX = true;
+                } else if (Math.abs((rect.left + rect.width) - guideX) < snapThreshold) {
+                    obj.set({ left: obj.left + (guideX - (rect.left + rect.width)) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedX = true;
+                }
+            } else if (o.guideType === 'horizontal') {
+                if (snappedY) return;
+                const guideY = o.top;
+
+                // Snap center, top, or bottom edges
+                if (Math.abs(centerY - guideY) < snapThreshold) {
+                    obj.set({ top: obj.top + (guideY - centerY) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedY = true;
+                } else if (Math.abs(rect.top - guideY) < snapThreshold) {
+                    obj.set({ top: obj.top + (guideY - rect.top) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedY = true;
+                } else if (Math.abs((rect.top + rect.height) - guideY) < snapThreshold) {
+                    obj.set({ top: obj.top + (guideY - (rect.top + rect.height)) });
+                    o.set({ stroke: '#10b981', strokeWidth: 2.5 });
+                    snappedY = true;
+                }
+            }
+        });
+
+        canvas.renderAll();
+    });
+
+    // Reset styles on mouse up
+    canvas.on('mouse:up', () => {
+        canvas.getObjects().forEach(o => {
+            if (o.isGuideLine) {
+                o.set({ stroke: '#8b5cf6', strokeWidth: 1.5 });
+            }
+        });
+        canvas.renderAll();
+    });
     
     fontSizeInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
@@ -595,11 +741,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
         btnGenerate.disabled = true; progressContainer.style.display = 'block';
 
-        const objectsConfig = canvas.getObjects().map(o => ({
-            originalText: o.text, left: o.left, top: o.top, width: o.width, fontSize: o.fontSize,
-            fontFamily: o.fontFamily, fill: o.fill, textAlign: o.textAlign, originX: o.originX,
-            originY: o.originY, customFieldType: o.customFieldType, scaleX: o.scaleX, scaleY: o.scaleY
-        }));
+        const objectsConfig = canvas.getObjects()
+            .filter(o => !o.isGuideLine) // Filter out helper guide lines!
+            .map(o => ({
+                originalText: o.text, left: o.left, top: o.top, width: o.width, fontSize: o.fontSize,
+                fontFamily: o.fontFamily, fill: o.fill, textAlign: o.textAlign, originX: o.originX,
+                originY: o.originY, customFieldType: o.customFieldType, scaleX: o.scaleX, scaleY: o.scaleY
+            }));
 
         const zip = new JSZip();
         const batchSize = Math.min(Math.floor((navigator.hardwareConcurrency || 4) * 1.5), Math.floor((navigator.deviceMemory || 4) * 3), 20);
