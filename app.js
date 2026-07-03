@@ -658,8 +658,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Generation Logic ---
     async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat) {
+        // Check if there are non-ASCII characters in any fields to be rendered
+        let hasUnicode = false;
+        for (const cfg of objectsConfig) {
+            let displayText = cfg.originalText;
+            const fieldType = cfg.customFieldType;
+            if (fieldType) {
+                if (fieldType === 'name') displayText = record.name || "";
+                else if (fieldType === 'date') displayText = record.date || "";
+                else if (fieldType === 'id') displayText = record.id || "";
+                else {
+                    displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
+                }
+            }
+            if (displayText && /[^\x00-\x7F]/.test(displayText)) {
+                hasUnicode = true;
+                break;
+            }
+        }
+
+        let effectiveFormat = outputFormat;
+        if (hasUnicode && outputFormat === 'text') {
+            console.warn("Detected non-ASCII (Unicode) characters. Falling back to Image PDF format for compatibility.");
+            effectiveFormat = 'image';
+        }
+
         // Mode A: PDF Overlay using pdf-lib (Preserves original PDF content)
-        if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
+        if (effectiveFormat === 'text' && templateIsPDF && originalPDFBytes) {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
             const pdfDoc = await PDFDocument.load(originalPDFBytes);
             const pages = pdfDoc.getPages();
@@ -741,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     vCanvas.renderAll();
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
-                    if (outputFormat === 'image') {
+                    if (effectiveFormat === 'image') {
                         pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateData.width, templateData.height);
                     } else {
                         pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
@@ -796,38 +821,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalHeaders = uniqueHeaders.filter(h => h && h.trim() !== '');
         let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
 
-        for (let i = 0; i < records.length; i += batchSize) {
-            const batch = records.slice(i, i + batchSize);
-            const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat)));
-            results.forEach((res, idx) => {
-                const record = batch[idx];
-                let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
-                let idPart = res.id ? `_${String(res.id).replace(/[^a-z0-9]/gi, '_')}` : "";
-                const filename = `${originalFileName}${idPart}_${namePart}.pdf`;
-                
-                zip.file(filename, res.data);
-                
-                // Add to mail merge CSV
-                const rowValues = finalHeaders.map(h => {
-                    const val = record[h] || record[h.toLowerCase()] || record[h.toUpperCase()] || '';
-                    return `"${val.replace(/"/g, '""')}"`;
+        try {
+            for (let i = 0; i < records.length; i += batchSize) {
+                const batch = records.slice(i, i + batchSize);
+                const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat)));
+                results.forEach((res, idx) => {
+                    const record = batch[idx];
+                    let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
+                    let idPart = res.id ? `_${String(res.id).replace(/[^a-z0-9]/gi, '_')}` : "";
+                    const filename = `${originalFileName}${idPart}_${namePart}.pdf`;
+                    
+                    zip.file(filename, res.data);
+                    
+                    // Add to mail merge CSV
+                    const rowValues = finalHeaders.map(h => {
+                        const val = record[h] || record[h.toLowerCase()] || record[h.toUpperCase()] || '';
+                        return `"${val.replace(/"/g, '""')}"`;
+                    });
+                    rowValues.push(`"${filename}"`);
+                    mailMergeData += rowValues.join(',') + '\n';
                 });
-                rowValues.push(`"${filename}"`);
-                mailMergeData += rowValues.join(',') + '\n';
-            });
-            completed += batch.length;
-            progressFill.style.width = `${(completed / records.length) * 100}%`;
-            progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
-        }
-        
-        // Download mail merge file separately if there is at least one email provided
-        if (records.some(r => r.email)) {
-            const blob = new Blob(["\uFEFF" + mailMergeData], { type: 'text/csv;charset=utf-8;' });
-            saveAs(blob, "mail_merge.csv");
-        }
+                completed += batch.length;
+                progressFill.style.width = `${(completed / records.length) * 100}%`;
+                progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+            }
+            
+            // Download mail merge file separately if there is at least one email provided
+            if (records.some(r => r.email)) {
+                const blob = new Blob(["\uFEFF" + mailMergeData], { type: 'text/csv;charset=utf-8;' });
+                saveAs(blob, "mail_merge.csv");
+            }
 
-        saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
-        btnGenerate.disabled = false; progressText.innerText = dict.complete;
-        setTimeout(() => progressContainer.style.display = 'none', 3000);
+            saveAs(await zip.generateAsync({type:"blob"}), "certificates.zip");
+            btnGenerate.disabled = false; progressText.innerText = dict.complete;
+            setTimeout(() => progressContainer.style.display = 'none', 3000);
+        } catch (err) {
+            console.error("Generation failed: ", err);
+            alert("Export failed: " + err.message);
+            btnGenerate.disabled = false;
+            progressContainer.style.display = 'none';
+        }
     });
 });
