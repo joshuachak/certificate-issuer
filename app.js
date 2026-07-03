@@ -50,6 +50,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRecords = [];
     let currentPreviewIndex = 0;
 
+    // Extend translations with custom field keys if not present
+    const extraTranslations = {
+        en: {
+            custom_fields_title: "Custom Fields",
+            custom_field_placeholder: "e.g. Score",
+            add_custom_field_btn: "+ Add",
+            remove_field_tooltip: "Remove Field"
+        },
+        "zh-TW": {
+            custom_fields_title: "自訂欄位",
+            custom_field_placeholder: "例如：成績",
+            add_custom_field_btn: "+ 新增",
+            remove_field_tooltip: "移除欄位"
+        },
+        "zh-CN": {
+            custom_fields_title: "自定义字段",
+            custom_field_placeholder: "例如：成绩",
+            add_custom_field_btn: "+ 新增",
+            remove_field_tooltip: "移除字段"
+        }
+    };
+    
+    if (typeof translations !== 'undefined') {
+        for (let lang in translations) {
+            const extra = extraTranslations[lang] || extraTranslations['en'];
+            translations[lang] = { ...extra, ...translations[lang] };
+        }
+    }
+
     // --- i18n Logic ---
     function setLanguage(lang) {
         currentLang = lang;
@@ -74,6 +103,80 @@ document.addEventListener('DOMContentLoaded', () => {
     languageSelect.addEventListener('change', (e) => setLanguage(e.target.value));
     setLanguage(currentLang);
 
+    // State for custom fields
+    let customFields = []; // Array of { key: string, label: string }
+    let parsedHeaders = ['name', 'email', 'date', 'id'];
+
+    const standardKeys = new Set(['name', 'email', 'date', 'id', 'issuance number', 'mail', '姓名', '日期', '學號', '編號', '郵件', 'attachment_filename']);
+
+    // --- Custom Fields Logic ---
+    const customFieldsButtonsContainer = document.getElementById('custom-fields-buttons');
+    const customFieldInput = document.getElementById('custom-field-input');
+    const btnAddCustomField = document.getElementById('add-custom-field-btn');
+
+    function addCustomField(fieldName) {
+        if (!fieldName) return;
+        const normalizedKey = fieldName.trim().toLowerCase();
+        if (normalizedKey === '') return;
+
+        // Don't add standard keys or duplicate custom keys
+        if (standardKeys.has(normalizedKey)) return;
+        if (customFields.some(f => f.key === normalizedKey)) return;
+
+        customFields.push({ key: normalizedKey, label: fieldName.trim() });
+
+        // Render the button in UI
+        const btnWrapper = document.createElement('div');
+        btnWrapper.className = 'custom-field-btn-wrapper';
+        btnWrapper.dataset.fieldKey = normalizedKey;
+        
+        const dict = translations[currentLang] || translations['en'];
+        const tooltip = dict.remove_field_tooltip || "Remove Field";
+        
+        btnWrapper.innerHTML = `
+            <button class="add-field-btn" style="flex: 1; margin: 0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Add [${fieldName.trim()}]</span>
+            </button>
+            <button class="remove-custom-field-btn" title="${tooltip}">×</button>
+        `;
+
+        // Click event to place it on fabric canvas
+        btnWrapper.querySelector('.add-field-btn').addEventListener('click', () => {
+            addPlaceholder(normalizedKey, `[${fieldName.trim()}]`);
+        });
+
+        // Click event to remove the custom field button
+        btnWrapper.querySelector('.remove-custom-field-btn').addEventListener('click', () => {
+            customFields = customFields.filter(f => f.key !== normalizedKey);
+            btnWrapper.remove();
+        });
+
+        customFieldsButtonsContainer.appendChild(btnWrapper);
+    }
+
+    if (btnAddCustomField) {
+        btnAddCustomField.addEventListener('click', () => {
+            const val = customFieldInput.value.trim();
+            if (val) {
+                addCustomField(val);
+                customFieldInput.value = '';
+            }
+        });
+    }
+
+    if (customFieldInput) {
+        customFieldInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const val = customFieldInput.value.trim();
+                if (val) {
+                    addCustomField(val);
+                    customFieldInput.value = '';
+                }
+            }
+        });
+    }
+
     // --- Data Parsing ---
     async function parseRecords() {
         let records = [];
@@ -81,29 +184,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isPaste) {
             const val = namesTextarea.value.trim();
             if (val) {
-                val.split('\n').forEach(line => {
-                    const parts = line.split('|').map(s => s.trim());
-                    if (parts[0]) {
-                        records.push({
-                            name: parts[0],
-                            email: parts[1] || '',
-                            date: '',
-                            id: ''
-                        });
+                const lines = val.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length > 0) {
+                    let headers = ['name', 'email'];
+                    let startIdx = 0;
+                    const firstLineParts = lines[0].split('|').map(s => s.trim());
+                    const firstLineLower = firstLineParts.map(s => s.toLowerCase());
+                    const hasHeaderHeuristic = firstLineLower.some(p => 
+                        ['name', '姓名', 'email', 'mail', '郵件', 'date', '日期', 'id', '編號', '學號'].some(k => p.includes(k))
+                    );
+
+                    if (hasHeaderHeuristic && firstLineParts.length > 1) {
+                        headers = firstLineParts;
+                        startIdx = 1;
+                        parsedHeaders = headers;
+                    } else {
+                        parsedHeaders = ['name', 'email'];
                     }
-                });            }
+
+                    // Dynamically register custom fields from quick paste headers
+                    headers.forEach(h => {
+                        const norm = h.toLowerCase().trim();
+                        if (norm && !standardKeys.has(norm)) {
+                            addCustomField(h);
+                        }
+                    });
+
+                    for (let i = startIdx; i < lines.length; i++) {
+                        const parts = lines[i].split('|').map(s => s.trim());
+                        const record = {};
+                        headers.forEach((h, idx) => {
+                            const v = parts[idx] || '';
+                            record[h] = v;
+                            record[h.toLowerCase()] = v;
+                        });
+                        // Ensure standard keys
+                        record.name = record.name || record['姓名'] || record['name'] || parts[0] || '';
+                        record.email = record.email || record['email'] || record['mail'] || record['郵件'] || parts[1] || '';
+                        record.date = record.date || record['date'] || record['日期'] || '';
+                        record.id = record.id || record['id'] || record['編號'] || record['學號'] || '';
+                        records.push(record);
+                    }
+                }
+            }
         } else {
             const file = dataUpload.files[0];
             if (file) {
                 await new Promise(res => Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => {
-                    r.data.forEach(row => {
-                        const norm = {}; for (let k in row) norm[k.toLowerCase().trim()] = row[k];
-                        records.push({
-                            name: norm['name']||'', 
-                            email: norm['email']||'',
-                            date: norm['date']||'', 
-                            id: norm['issuance number'] || norm['id'] || ''
+                    if (r.meta && r.meta.fields) {
+                        parsedHeaders = r.meta.fields.map(f => f.trim());
+                        // Dynamically register custom fields from uploaded CSV headers
+                        parsedHeaders.forEach(h => {
+                            const norm = h.toLowerCase().trim();
+                            if (norm && !standardKeys.has(norm)) {
+                                addCustomField(h);
+                            }
                         });
+                    }
+                    r.data.forEach(row => {
+                        const record = {};
+                        for (let k in row) {
+                            const v = row[k] || '';
+                            record[k.trim()] = v;
+                            record[k.toLowerCase().trim()] = v;
+                        }
+                        // Ensure standard keys
+                        record.name = record.name || record['姓名'] || record['name'] || '';
+                        record.email = record.email || record['email'] || record['mail'] || record['郵件'] || '';
+                        record.date = record.date || record['date'] || record['日期'] || '';
+                        record.id = record.id || record['id'] || record['編號'] || record['學號'] || record['issuance number'] || '';
+                        records.push(record);
                     });
                     res();
                 }}));
@@ -140,9 +290,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const record = currentRecords[currentPreviewIndex];
         previewIndexText.innerText = `${currentPreviewIndex + 1} / ${currentRecords.length}`;
         canvas.getObjects().forEach(o => {
-            if (o.customFieldType === 'name') o.set('text', record.name || '[Name]');
-            else if (o.customFieldType === 'date') o.set('text', record.date || '[Date]');
-            else if (o.customFieldType === 'id') o.set('text', record.id || '[ID]');
+            const fieldType = o.customFieldType;
+            if (fieldType) {
+                if (fieldType === 'name') {
+                    o.set('text', record.name || '[Name]');
+                } else if (fieldType === 'date') {
+                    o.set('text', record.date || '[Date]');
+                } else if (fieldType === 'id') {
+                    o.set('text', record.id || '[ID]');
+                } else {
+                    // Custom fields lookup (case-insensitive)
+                    const val = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || `[${fieldType}]`;
+                    o.set('text', val);
+                }
+            }
         });
         canvas.renderAll();
     }
@@ -300,7 +461,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     downloadTemplateBtn.addEventListener('click', () => {
-        const content = "Name,Email,Date,ID\nJohn Doe,john@example.com,2026-03-23,001\nJane Smith,jane@example.com,2026-03-23,002";
+        const headers = ['Name', 'Email', 'Date', 'ID'];
+        customFields.forEach(f => {
+            headers.push(f.label);
+        });
+        const headerRow = headers.join(',');
+        const row1 = ['John Doe', 'john@example.com', '2026-03-23', '001', ...customFields.map(() => 'Value1')].join(',');
+        const row2 = ['Jane Smith', 'jane@example.com', '2026-03-23', '002', ...customFields.map(() => 'Value2')].join(',');
+        const content = `${headerRow}\n${row1}\n${row2}`;
         const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
         saveAs(blob, "template.csv");
     });
@@ -332,9 +500,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (const cfg of objectsConfig) {
                 let displayText = cfg.originalText;
-                if (cfg.customFieldType === 'name') displayText = record.name || "";
-                else if (cfg.customFieldType === 'date') displayText = record.date || "";
-                else if (cfg.customFieldType === 'id') displayText = record.id || "";
+                const fieldType = cfg.customFieldType;
+                if (fieldType) {
+                    if (fieldType === 'name') {
+                        displayText = record.name || "";
+                    } else if (fieldType === 'date') {
+                        displayText = record.date || "";
+                    } else if (fieldType === 'id') {
+                        displayText = record.id || "";
+                    } else {
+                        displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
+                    }
+                }
 
                 if (!displayText) continue;
 
@@ -373,9 +550,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 vCanvas.setBackgroundImage(fabricImg, () => {
                     objectsConfig.forEach(cfg => {
                         let displayText = cfg.originalText;
-                        if (cfg.customFieldType === 'name') displayText = record.name || "";
-                        else if (cfg.customFieldType === 'date') displayText = record.date || "";
-                        else if (cfg.customFieldType === 'id') displayText = record.id || "";
+                        const fieldType = cfg.customFieldType;
+                        if (fieldType) {
+                            if (fieldType === 'name') {
+                                displayText = record.name || "";
+                            } else if (fieldType === 'date') {
+                                displayText = record.date || "";
+                            } else if (fieldType === 'id') {
+                                displayText = record.id || "";
+                            } else {
+                                displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
+                            }
+                        }
                         const { text, ...cleanOptions } = cfg;
                         vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
                     });
@@ -420,7 +606,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let completed = 0;
         const dict = translations[currentLang];
         
-        let mailMergeData = "Name,Email,Date,ID,Attachment_Filename\n";
+        const uniqueHeaders = [];
+        parsedHeaders.forEach(h => {
+            const trimmed = h.trim();
+            if (trimmed && !uniqueHeaders.some(uh => uh.toLowerCase() === trimmed.toLowerCase())) {
+                uniqueHeaders.push(trimmed);
+            }
+        });
+        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'name')) uniqueHeaders.unshift('Name');
+        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'email')) uniqueHeaders.push('Email');
+        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'date')) uniqueHeaders.push('Date');
+        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'id')) uniqueHeaders.push('ID');
+
+        const finalHeaders = uniqueHeaders.filter(h => h && h.trim() !== '');
+        let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
 
         for (let i = 0; i < records.length; i += batchSize) {
             const batch = records.slice(i, i + batchSize);
@@ -434,11 +633,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 zip.file(filename, res.data);
                 
                 // Add to mail merge CSV
-                const safeName = record.name ? `"${record.name.replace(/"/g, '""')}"` : "";
-                const safeEmail = record.email ? `"${record.email.replace(/"/g, '""')}"` : "";
-                const safeDate = record.date ? `"${record.date.replace(/"/g, '""')}"` : "";
-                const safeId = record.id ? `"${record.id.replace(/"/g, '""')}"` : "";
-                mailMergeData += `${safeName},${safeEmail},${safeDate},${safeId},"${filename}"\n`;
+                const rowValues = finalHeaders.map(h => {
+                    const val = record[h] || record[h.toLowerCase()] || record[h.toUpperCase()] || '';
+                    return `"${val.replace(/"/g, '""')}"`;
+                });
+                rowValues.push(`"${filename}"`);
+                mailMergeData += rowValues.join(',') + '\n';
             });
             completed += batch.length;
             progressFill.style.width = `${(completed / records.length) * 100}%`;
