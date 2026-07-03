@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const stylingControls = document.getElementById('styling-controls');
     const alignmentControls = document.getElementById('alignment-controls');
     const fontSizeInput = document.getElementById('font-size');
+    const posXInput = document.getElementById('pos-x');
+    const posYInput = document.getElementById('pos-y');
     const textColorInput = document.getElementById('text-color');
     const textAlignSelect = document.getElementById('text-align');
     const fontFamilySelect = document.getElementById('font-family');
@@ -492,6 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 alignmentControls.style.display = 'block';
                 btnDelete.disabled = false;
                 fontSizeInput.value = obj.fontSize;
+                posXInput.value = Math.round(obj.left);
+                posYInput.value = Math.round(obj.top);
                 textColorInput.value = obj.fill;
                 textAlignSelect.value = obj.textAlign;
                 fontFamilySelect.value = obj.fontFamily;
@@ -848,6 +852,29 @@ document.addEventListener('DOMContentLoaded', () => {
             lastTextSettings.fontSize = val;
         }
     });
+    // X/Y position inputs: same canvas coordinates as Export Layout (obj.left/top).
+    // With originX/Y 'center' these are the textbox's centre point.
+    function applyPositionInput(axis, raw) {
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.type !== 'textbox') return;
+        const val = parseFloat(raw);
+        if (isNaN(val)) return;
+        obj.set(axis, val);
+        obj.setCoords();
+        canvas.renderAll();
+    }
+    posXInput.addEventListener('input', (e) => applyPositionInput('left', e.target.value));
+    posYInput.addEventListener('input', (e) => applyPositionInput('top', e.target.value));
+    // Keep the numbers in sync while dragging / after any transform.
+    function syncPositionInputs() {
+        const obj = canvas.getActiveObject();
+        if (obj && obj.type === 'textbox') {
+            posXInput.value = Math.round(obj.left);
+            posYInput.value = Math.round(obj.top);
+        }
+    }
+    canvas.on('object:moving', syncPositionInputs);
+    canvas.on('object:modified', syncPositionInputs);
     textColorInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) {
