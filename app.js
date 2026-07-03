@@ -564,11 +564,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const obj = e.target;
         if (!obj || obj.isGuideLine) return;
 
+        // Calculate unsnapped coordinates using active drag pointer coordinates to prevent jittering
+        let unsnappedLeft = obj.left;
+        let unsnappedTop = obj.top;
+        if (e.transform && e.transform.original && e.pointer) {
+            const originalLeft = e.transform.original.left;
+            const originalTop = e.transform.original.top;
+            const startPointerX = e.transform.ex;
+            const startPointerY = e.transform.ey;
+            const currentPointerX = e.pointer.x;
+            const currentPointerY = e.pointer.y;
+            unsnappedLeft = originalLeft + (currentPointerX - startPointerX);
+            unsnappedTop = originalTop + (currentPointerY - startPointerY);
+        }
+
         const rect = obj.getBoundingRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+        const dx = unsnappedLeft - obj.left;
+        const dy = unsnappedTop - obj.top;
+
+        const unsnappedRect = {
+            left: rect.left + dx,
+            top: rect.top + dy,
+            width: rect.width,
+            height: rect.height
+        };
+
+        const centerX = unsnappedRect.left + unsnappedRect.width / 2;
+        const centerY = unsnappedRect.top + unsnappedRect.height / 2;
         const snapThreshold = 15;
 
+        let targetLeft = unsnappedLeft;
+        let targetTop = unsnappedTop;
         let snappedX = false;
         let snappedY = false;
 
@@ -588,15 +614,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Snap center, left, or right edges
                 if (Math.abs(centerX - guideX) < snapThreshold) {
-                    obj.set({ left: obj.left + (guideX - centerX) });
+                    targetLeft = unsnappedLeft + (guideX - centerX);
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedX = true;
-                } else if (Math.abs(rect.left - guideX) < snapThreshold) {
-                    obj.set({ left: obj.left + (guideX - rect.left) });
+                } else if (Math.abs(unsnappedRect.left - guideX) < snapThreshold) {
+                    targetLeft = unsnappedLeft + (guideX - unsnappedRect.left);
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedX = true;
-                } else if (Math.abs((rect.left + rect.width) - guideX) < snapThreshold) {
-                    obj.set({ left: obj.left + (guideX - (rect.left + rect.width)) });
+                } else if (Math.abs((unsnappedRect.left + unsnappedRect.width) - guideX) < snapThreshold) {
+                    targetLeft = unsnappedLeft + (guideX - (unsnappedRect.left + unsnappedRect.width));
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedX = true;
                 }
@@ -606,21 +632,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Snap center, top, or bottom edges
                 if (Math.abs(centerY - guideY) < snapThreshold) {
-                    obj.set({ top: obj.top + (guideY - centerY) });
+                    targetTop = unsnappedTop + (guideY - centerY);
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedY = true;
-                } else if (Math.abs(rect.top - guideY) < snapThreshold) {
-                    obj.set({ top: obj.top + (guideY - rect.top) });
+                } else if (Math.abs(unsnappedRect.top - guideY) < snapThreshold) {
+                    targetTop = unsnappedTop + (guideY - unsnappedRect.top);
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedY = true;
-                } else if (Math.abs((rect.top + rect.height) - guideY) < snapThreshold) {
-                    obj.set({ top: obj.top + (guideY - (rect.top + rect.height)) });
+                } else if (Math.abs((unsnappedRect.top + unsnappedRect.height) - guideY) < snapThreshold) {
+                    targetTop = unsnappedTop + (guideY - (unsnappedRect.top + unsnappedRect.height));
                     o.set({ stroke: '#10b981', strokeWidth: 2.5 });
                     snappedY = true;
                 }
             }
         });
 
+        obj.set({ left: targetLeft, top: targetTop });
+        obj.setCoords();
         canvas.renderAll();
     });
 
