@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Fabric Canvas
     const canvas = new fabric.Canvas('certificate-canvas', {
         preserveObjectStacking: true,
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        targetFindTolerance: 15
     });
     
     // UI Elements
@@ -428,6 +429,13 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.on('selection:cleared', onObjectCleared);
     
     function onObjectSelected(e) {
+        // Reset all guide lines first to ensure clean state
+        canvas.getObjects().forEach(o => {
+            if (o.isGuideLine) {
+                o.set({ stroke: '#8b5cf6', strokeWidth: 1.5, strokeDashArray: [5, 5] });
+            }
+        });
+
         const obj = e.selected[0];
         if (obj) {
             if (obj.type === 'textbox') {
@@ -443,14 +451,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 stylingControls.style.display = 'none';
                 alignmentControls.style.display = 'none';
                 btnDelete.disabled = false;
+                // Visual feedback for selected guide line: make solid and thicker
+                obj.set({ stroke: '#4f46e5', strokeWidth: 2.5, strokeDashArray: null });
             }
         }
+        canvas.renderAll();
     }
     
     function onObjectCleared() {
         stylingControls.style.display = 'none';
         alignmentControls.style.display = 'none';
         btnDelete.disabled = true;
+        // Reset all guide lines to default dashed purple
+        canvas.getObjects().forEach(o => {
+            if (o.isGuideLine) {
+                o.set({ stroke: '#8b5cf6', strokeWidth: 1.5, strokeDashArray: [5, 5] });
+            }
+        });
+        canvas.renderAll();
     }
 
     // --- Alignment Guides & Snapping Logic ---
@@ -466,7 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isGuideLine: true,
             guideType: 'vertical',
             hoverCursor: 'ew-resize',
-            lockMovementY: true
+            lockMovementY: true,
+            padding: 15 // Increase click target area by 15px on all sides!
         });
         canvas.add(line);
         canvas.setActiveObject(line);
@@ -485,7 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isGuideLine: true,
             guideType: 'horizontal',
             hoverCursor: 'ns-resize',
-            lockMovementX: true
+            lockMovementX: true,
+            padding: 15 // Increase click target area by 15px on all sides!
         });
         canvas.add(line);
         canvas.setActiveObject(line);
@@ -569,9 +589,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset styles on mouse up
     canvas.on('mouse:up', () => {
+        const active = canvas.getActiveObject();
         canvas.getObjects().forEach(o => {
             if (o.isGuideLine) {
-                o.set({ stroke: '#8b5cf6', strokeWidth: 1.5 });
+                if (active === o) {
+                    // Keep currently selected guide solid and thicker
+                    o.set({ stroke: '#4f46e5', strokeWidth: 2.5, strokeDashArray: null });
+                } else {
+                    // Reset other guides to thin dashed
+                    o.set({ stroke: '#8b5cf6', strokeWidth: 1.5, strokeDashArray: [5, 5] });
+                }
             }
         });
         canvas.renderAll();
