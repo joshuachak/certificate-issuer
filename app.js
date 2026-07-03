@@ -746,9 +746,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mode B: jsPDF Fallback (For Images or Flattened output)
         const vCanvas = new fabric.StaticCanvas(null, { width: templateData.width, height: templateData.height });
         return new Promise((resolve, reject) => {
-            fabric.util.loadImage(templateData.bg, (imgElement) => {
+            fabric.util.loadImage(templateData.bg, async (imgElement) => {
                 const fabricImg = new fabric.Image(imgElement, { originX: 'left', originY: 'top' });
-                vCanvas.setBackgroundImage(fabricImg, () => {
+                vCanvas.setBackgroundImage(fabricImg, async () => {
                     objectsConfig.forEach(cfg => {
                         let displayText = cfg.originalText;
                         const fieldType = cfg.customFieldType;
