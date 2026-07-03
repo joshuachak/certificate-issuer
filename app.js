@@ -959,11 +959,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     completed++;
-                    progressFill.style.width = `${(completed / records.length) * 100}%`;
+                    const renderProgress = (completed / records.length) * 50;
+                    progressFill.style.width = `${renderProgress}%`;
                     progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
                 }
 
-                progressText.innerText = "Saving certificates...";
+                const savingText = currentLang.startsWith('zh') ? "正在儲存證書" : "Saving certificates";
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
                     const singleDoc = await PDFDocument.create();
@@ -982,6 +983,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     rowValues.push(`"${filename}"`);
                     mailMergeData += rowValues.join(',') + '\n';
+
+                    const saveProgress = 50 + (((i + 1) / records.length) * 50);
+                    progressFill.style.width = `${saveProgress}%`;
+                    progressText.innerText = `${savingText}: ${i + 1} / ${records.length}`;
                 }
             } else {
                 for (let i = 0; i < records.length; i += batchSize) {
