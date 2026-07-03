@@ -1026,13 +1026,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Height-independent by design; verified within 1px via pdf.js round-trip.
                     const yBaseline = yMax - (pdfFontSize * 0.87) - (j * lineSpacing);
 
-                    firstPage.drawText(lineText || "", {
-                        x: xStart,
-                        y: yBaseline,
-                        size: pdfFontSize,
-                        font: font,
-                        color: rgb(color.r, color.g, color.b),
-                    });
+                    // pdf-lib mis-writes advance widths for these full Noto CJK fonts, so one
+                    // drawText() spreads glyphs apart ("3 Jul 2026" -> "3  Jul 2 0 2 6").
+                    // widthOfTextAtSize() is correct, so draw each character at a manually
+                    // accumulated x. Fixes Latin spacing and keeps CJK correct (verified via
+                    // pdf.js round-trip). Alignment above still uses the correct full-line width.
+                    let charX = xStart;
+                    for (const ch of (lineText || "")) {
+                        firstPage.drawText(ch, {
+                            x: charX,
+                            y: yBaseline,
+                            size: pdfFontSize,
+                            font: font,
+                            color: rgb(color.r, color.g, color.b),
+                        });
+                        charX += font.widthOfTextAtSize(ch, pdfFontSize);
+                    }
                 }
             }
             return { name: record.name, id: record.id, data: await pdfDoc.save() };
@@ -1320,13 +1329,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Height-independent by design; verified within 1px via pdf.js round-trip.
                             const yBaseline = yMax - (pdfFontSize * 0.87) - (j * lineSpacing);
 
-                            page.drawText(lineText || "", {
-                                x: xStart,
-                                y: yBaseline,
-                                size: pdfFontSize,
-                                font: font,
-                                color: rgb(color.r, color.g, color.b),
-                            });
+                            // pdf-lib mis-writes advance widths for these full Noto CJK fonts, so one
+                            // drawText() spreads glyphs apart ("3 Jul 2026" -> "3  Jul 2 0 2 6").
+                            // widthOfTextAtSize() is correct, so draw each character at a manually
+                            // accumulated x. Fixes Latin spacing and keeps CJK correct (verified via
+                            // pdf.js round-trip). Alignment above still uses the correct full-line width.
+                            let charX = xStart;
+                            for (const ch of (lineText || "")) {
+                                page.drawText(ch, {
+                                    x: charX,
+                                    y: yBaseline,
+                                    size: pdfFontSize,
+                                    font: font,
+                                    color: rgb(color.r, color.g, color.b),
+                                });
+                                charX += font.widthOfTextAtSize(ch, pdfFontSize);
+                            }
                         }
                     }
 
