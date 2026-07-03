@@ -927,6 +927,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
+            // The template page's MediaBox may not start at (0,0). pdf-lib drawText uses
+            // absolute user-space coords, so overlays must be offset by the MediaBox origin
+            // or they land shifted (pdf.js/preview already accounts for it, hence the mismatch).
+            const mediaBox = firstPage.getMediaBox();
 
             let scaleX = width / (templateData.width || 1);
             let scaleY = height / (templateData.height || 1);
@@ -998,8 +1002,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     top = top - actualHeight;
                 }
 
-                const xMin = left * scaleX;
-                const yMax = height - (top * scaleY);
+                const xMin = mediaBox.x + left * scaleX;
+                const yMax = mediaBox.y + height - (top * scaleY);
                 const pdfWidth = actualWidth * scaleX;
                 const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
                 const pdfFontSize = rawFontSize * rawScaleY * scaleY;
@@ -1240,6 +1244,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const srcDoc = await PDFDocument.load(originalPDFBytes);
                 const templatePage = srcDoc.getPages()[0];
                 const { width, height } = templatePage.getSize();
+                // MediaBox origin may be non-zero; copied pages inherit it. Offset overlays by
+                // it so pdf-lib drawText lands where pdf.js/preview renders the page content.
+                const mediaBox = templatePage.getMediaBox();
                 let scaleX = width / (templateImageWidth || 1);
                 let scaleY = height / (templateImageHeight || 1);
                 if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
@@ -1301,8 +1308,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             top = top - actualHeight;
                         }
 
-                        const xMin = left * scaleX;
-                        const yMax = height - (top * scaleY);
+                        const xMin = mediaBox.x + left * scaleX;
+                        const yMax = mediaBox.y + height - (top * scaleY);
                         const pdfWidth = actualWidth * scaleX;
                         const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
                         const pdfFontSize = rawFontSize * rawScaleY * scaleY;
