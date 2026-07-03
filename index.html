@@ -26,7 +26,7 @@
          are intentionally NOT imported so the local Noto aliases in styles.css win, keeping the canvas
          (and image-mode raster) identical to the Noto fonts embedded into text-over-PDF output. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.4">
+    <link rel="stylesheet" href="styles.css?v=1.1.5">
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -42,7 +42,7 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     
     <!-- Translation Data -->
-    <script src="i18n.js?v=1.1.4"></script>
+    <script src="i18n.js?v=1.1.5"></script>
 </head>
 <body>
     <div class="app-container">
@@ -199,16 +199,12 @@
                             </select>
                         </label>
                         <label><span data-i18n="font">Font</span>: 
+                            <!-- Text-over-PDF embeds only these two Noto faces, so the editor
+                                 offers exactly what will render. Legacy layouts using other family
+                                 names are mapped to the matching face on selection. -->
                             <select id="font-family">
                                 <option value="Noto Sans TC">Noto Sans (思源黑體)</option>
                                 <option value="Noto Serif TC">Noto Serif (思源宋體)</option>
-                                <option value="Times New Roman">Times New Roman</option>
-                                <option value="Arial">Modern Sans</option>
-                                <option value="Montserrat">Montserrat</option>
-                                <option value="Lora">Lora</option>
-                                <option value="Cinzel">Cinzel</option>
-                                <option value="Dancing Script">Dancing Script</option>
-                                <option value="Great Vibes">Great Vibes</option>
                             </select>
                         </label>
                         <button id="delete-selected-btn" class="danger-btn">
@@ -313,6 +309,6 @@
             </main>
         </div>
     </div>
-    <script src="app.js?v=1.1.4"></script>
+    <script src="app.js?v=1.1.5"></script>
 </body>
 </html>

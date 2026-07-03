@@ -481,6 +481,17 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.on('selection:updated', onObjectSelected);
     canvas.on('selection:cleared', onObjectCleared);
     
+    // The two Noto faces are the only fonts actually embedded. Map any family name
+    // (incl. legacy layouts using Times/Lora/Cinzel/etc.) to the face it renders as,
+    // mirroring the serif detection used in the export paths.
+    function effectiveFontFamily(ff) {
+        const f = (ff || '').toLowerCase();
+        if (ff === 'Noto Serif TC' || f.includes('serif') || f.includes('times') || f.includes('lora') || f.includes('cinzel')) {
+            return 'Noto Serif TC';
+        }
+        return 'Noto Sans TC';
+    }
+
     function onObjectSelected(e) {
         // Reset all guide lines first to ensure clean state
         canvas.getObjects().forEach(o => {
@@ -496,14 +507,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 alignmentControls.style.display = 'block';
                 btnDelete.disabled = false;
                 fontSizeInput.value = obj.fontSize;
+                fontFamilySelect.value = effectiveFontFamily(obj.fontFamily);
                 posXInput.value = Math.round(obj.left);
                 posYInput.value = Math.round(obj.top);
                 boxWInput.value = Math.round(obj.getScaledWidth());
                 boxHInput.value = Math.round(obj.getScaledHeight());
                 textColorInput.value = obj.fill;
                 textAlignSelect.value = obj.textAlign;
-                fontFamilySelect.value = obj.fontFamily;
-                
+
                 // Store selected textbox styles
                 lastTextSettings = {
                     fontSize: obj.fontSize || 60,
