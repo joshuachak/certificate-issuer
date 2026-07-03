@@ -1283,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         pdf.addPage([templateImageWidth, templateImageHeight], templateImageWidth > templateImageHeight ? 'l' : 'p');
                     }
 
-                    pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateImageWidth, templateImageHeight);
+                    pdf.addImage(bgDataURL, 'JPEG', 0, 0, templateImageWidth, templateImageHeight);
 
                     vCanvas.getObjects().forEach(o => {
                         if (o.type === 'textbox' || o.type === 'text') {

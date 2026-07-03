@@ -1,3 +1,25 @@
+/* Font Aliasing to Unify Serif and Sans-serif to Google Noto Fonts as requested */
+@font-face {
+    font-family: 'Times New Roman';
+    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Lora';
+    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Cinzel';
+    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Arial';
+    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Montserrat';
+    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+}
+
 :root {
     --primary: #4f46e5;
     --primary-hover: #4338ca;
