@@ -26,7 +26,7 @@
          are intentionally NOT imported so the local Noto aliases in styles.css win, keeping the canvas
          (and image-mode raster) identical to the Noto fonts embedded into text-over-PDF output. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.2">
+    <link rel="stylesheet" href="styles.css?v=1.1.3">
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -42,7 +42,7 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     
     <!-- Translation Data -->
-    <script src="i18n.js?v=1.1.2"></script>
+    <script src="i18n.js?v=1.1.3"></script>
 </head>
 <body>
     <div class="app-container">
@@ -173,6 +173,12 @@
                                 Y <input type="number" id="pos-y" step="1" style="width:4.75rem;">
                             </span>
                         </label>
+                        <label><span data-i18n="box_size">Box</span>:
+                            <span style="display:inline-flex; gap:0.4rem; align-items:center;">
+                                W <input type="number" id="box-w" step="1" min="10" style="width:4.75rem;">
+                                H <input type="number" id="box-h" step="1" style="width:4.75rem;" disabled title="Auto — driven by font size">
+                            </span>
+                        </label>
                         <label><span data-i18n="color">Color</span>: 
                             <div class="color-control-wrapper">
                                 <div class="color-presets">
@@ -298,6 +304,6 @@
             </main>
         </div>
     </div>
-    <script src="app.js?v=1.1.2"></script>
+    <script src="app.js?v=1.1.3"></script>
 </body>
 </html>

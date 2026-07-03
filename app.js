@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fontSizeInput = document.getElementById('font-size');
     const posXInput = document.getElementById('pos-x');
     const posYInput = document.getElementById('pos-y');
+    const boxWInput = document.getElementById('box-w');
+    const boxHInput = document.getElementById('box-h');
     const textColorInput = document.getElementById('text-color');
     const textAlignSelect = document.getElementById('text-align');
     const fontFamilySelect = document.getElementById('font-family');
@@ -496,6 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 fontSizeInput.value = obj.fontSize;
                 posXInput.value = Math.round(obj.left);
                 posYInput.value = Math.round(obj.top);
+                boxWInput.value = Math.round(obj.getScaledWidth());
+                boxHInput.value = Math.round(obj.getScaledHeight());
                 textColorInput.value = obj.fill;
                 textAlignSelect.value = obj.textAlign;
                 fontFamilySelect.value = obj.fontFamily;
@@ -865,16 +869,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     posXInput.addEventListener('input', (e) => applyPositionInput('left', e.target.value));
     posYInput.addEventListener('input', (e) => applyPositionInput('top', e.target.value));
+    // Box width is editable (controls wrapping/centring); height is auto from the font size.
+    boxWInput.addEventListener('input', (e) => {
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.type !== 'textbox') return;
+        const val = parseFloat(e.target.value);
+        if (isNaN(val) || val < 10) return;
+        obj.set('width', val / (obj.scaleX || 1));
+        obj.setCoords();
+        canvas.renderAll();
+        boxHInput.value = Math.round(obj.getScaledHeight());
+    });
     // Keep the numbers in sync while dragging / after any transform.
     function syncPositionInputs() {
         const obj = canvas.getActiveObject();
         if (obj && obj.type === 'textbox') {
             posXInput.value = Math.round(obj.left);
             posYInput.value = Math.round(obj.top);
+            boxWInput.value = Math.round(obj.getScaledWidth());
+            boxHInput.value = Math.round(obj.getScaledHeight());
         }
     }
     canvas.on('object:moving', syncPositionInputs);
     canvas.on('object:modified', syncPositionInputs);
+    canvas.on('object:scaling', syncPositionInputs);
+
+    // Arrow-key nudge for the selected textbox (Shift = 10px). Ignore when typing in a field.
+    document.addEventListener('keydown', (e) => {
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+        const tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.isGuideLine) return;
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === 'ArrowUp') obj.set('top', obj.top - step);
+        else if (e.key === 'ArrowDown') obj.set('top', obj.top + step);
+        else if (e.key === 'ArrowLeft') obj.set('left', obj.left - step);
+        else if (e.key === 'ArrowRight') obj.set('left', obj.left + step);
+        obj.setCoords();
+        canvas.renderAll();
+        syncPositionInputs();
+    });
     textColorInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
         if (obj) {
