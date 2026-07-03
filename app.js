@@ -614,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const headerRow = headers.join(',');
         const row1 = ['John Doe', 'john@example.com', '2026-03-23', '001', ...customFields.map(() => 'Value1')].join(',');
         const row2 = ['Jane Smith', 'jane@example.com', '2026-03-23', '002', ...customFields.map(() => 'Value2')].join(',');
-        const content = `${headerRow}\n${row1}\n${row2}`;
+        const content = "\uFEFF" + `${headerRow}\n${row1}\n${row2}`;
         const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
         saveAs(blob, "template.csv");
     });
@@ -795,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Download mail merge file separately if there is at least one email provided
         if (records.some(r => r.email)) {
-            const blob = new Blob([mailMergeData], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(["\uFEFF" + mailMergeData], { type: 'text/csv;charset=utf-8;' });
             saveAs(blob, "mail_merge.csv");
         }
 
