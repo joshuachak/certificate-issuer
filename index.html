@@ -226,9 +226,13 @@
                             <input type="radio" name="output-format" value="image" checked>
                             <span data-i18n="format_image">Image PDF (Fast & Secure)</span>
                         </label>
-                        <label class="radio-label" title="Keeps text selectable.">
+                        <label class="radio-label" title="Keeps text selectable. Split into individual PDFs in ZIP.">
                             <input type="radio" name="output-format" value="text">
                             <span data-i18n="format_text">Text over PDF (Selectable)</span>
+                        </label>
+                        <label class="radio-label" title="Keeps text selectable. All certificates combined into a single PDF file.">
+                            <input type="radio" name="output-format" value="single-pdf">
+                            <span data-i18n="format_single_pdf">Text over PDF (Single File, All Pages)</span>
                         </label>
                     </div>
                     <button id="generate-btn" class="primary-btn" style="margin-top: 1.5rem;">

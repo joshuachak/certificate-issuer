@@ -989,7 +989,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
 
             // High-Performance Path: PDF Overlay using pdf-lib (Preserves original PDF content)
-            if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
+            if ((outputFormat === 'text' || outputFormat === 'single-pdf') && templateIsPDF && originalPDFBytes) {
                 const { PDFDocument, rgb, StandardFonts } = PDFLib;
                 
                 const mainPdfDoc = await PDFDocument.create();
@@ -1120,6 +1120,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
                 }
 
+                if (outputFormat === 'single-pdf') {
+                    progressText.innerText = "Saving combined PDF...";
+                    progressFill.style.width = '90%';
+                    const allPdfBytes = await mainPdfDoc.save();
+                    progressFill.style.width = '100%';
+                    
+                    const blob = new Blob([allPdfBytes], { type: "application/pdf" });
+                    saveAs(blob, `${originalFileName}_all_certificates.pdf`);
+                    btnGenerate.disabled = false; progressText.innerText = dict.complete;
+                    setTimeout(() => progressContainer.style.display = 'none', 3000);
+                    return;
+                }
+
                 // Compile and reload the document to trigger font subsetting and keep output size tiny
                 progressText.innerText = "Subsetting fonts...";
                 const compiledBytes = await mainPdfDoc.save();
@@ -1149,6 +1162,91 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressFill.style.width = `${saveProgress}%`;
                     progressText.innerText = `${savingText}: ${i + 1} / ${records.length}`;
                 }
+            } else if (outputFormat === 'single-pdf') {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: templateImageWidth > templateImageHeight ? 'l' : 'p',
+                    unit: 'px',
+                    format: [templateImageWidth, templateImageHeight],
+                    hotfixes: ["px_scaling"]
+                });
+
+                if (base64SansFont) {
+                    pdf.addFileToVFS('NotoSansTC.ttf', base64SansFont);
+                    pdf.addFont('NotoSansTC.ttf', 'NotoSansTC', 'normal');
+                }
+                if (base64SerifFont) {
+                    pdf.addFileToVFS('NotoSerifTC.ttf', base64SerifFont);
+                    pdf.addFont('NotoSerifTC.ttf', 'NotoSerifTC', 'normal');
+                }
+
+                const vCanvas = new fabric.Canvas(null, { width: templateImageWidth, height: templateImageHeight });
+                
+                for (let i = 0; i < records.length; i++) {
+                    const record = records[i];
+                    vCanvas.clear();
+                    
+                    await new Promise((resolveBg) => {
+                        fabric.util.loadImage(bgDataURL, (img) => {
+                            const fabricImg = new fabric.Image(img, { selectable: false, evented: false, originX: 'left', originY: 'top' });
+                            vCanvas.setBackgroundImage(fabricImg, () => resolveBg());
+                        });
+                    });
+
+                    objectsConfig.forEach(cfg => {
+                        let displayText = cfg.originalText;
+                        const fieldType = cfg.customFieldType;
+                        if (fieldType) {
+                            if (fieldType === 'name') displayText = record.name || "";
+                            else if (fieldType === 'date') displayText = record.date || "";
+                            else if (fieldType === 'id') displayText = record.id || "";
+                            else {
+                                displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
+                            }
+                        }
+                        const { text, ...cleanOptions } = cfg;
+                        vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
+                    });
+                    vCanvas.renderAll();
+
+                    if (i > 0) {
+                        pdf.addPage([templateImageWidth, templateImageHeight], templateImageWidth > templateImageHeight ? 'l' : 'p');
+                    }
+
+                    pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateImageWidth, templateImageHeight);
+
+                    vCanvas.getObjects().forEach(o => {
+                        if (o.type === 'textbox' || o.type === 'text') {
+                            let isSerif = o.fontFamily === 'Noto Serif TC' || o.fontFamily.toLowerCase().includes('serif') || o.fontFamily.toLowerCase().includes('times') || o.fontFamily.toLowerCase().includes('lora') || o.fontFamily.toLowerCase().includes('cinzel');
+                            let isCourier = o.fontFamily.toLowerCase().includes('courier');
+                            
+                            if (isSerif) {
+                                if (base64SerifFont) pdf.setFont('NotoSerifTC', 'normal');
+                                else pdf.setFont('times', 'normal');
+                            } else if (isCourier) {
+                                pdf.setFont('courier', 'normal');
+                            } else {
+                                if (base64SansFont) pdf.setFont('NotoSansTC', 'normal');
+                                else pdf.setFont('helvetica', 'normal');
+                            }
+                            pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
+                            pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
+                        }
+                    });
+
+                    completed++;
+                    progressFill.style.width = `${(completed / records.length) * 100}%`;
+                    progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
+                }
+                vCanvas.dispose();
+
+                progressText.innerText = "Saving combined PDF...";
+                const allPdfBytes = pdf.output('arraybuffer');
+                const blob = new Blob([allPdfBytes], { type: "application/pdf" });
+                saveAs(blob, `${originalFileName}_all_certificates.pdf`);
+                btnGenerate.disabled = false; progressText.innerText = dict.complete;
+                setTimeout(() => progressContainer.style.display = 'none', 3000);
+                return;
             } else {
                 for (let i = 0; i < records.length; i += batchSize) {
                     const batch = records.slice(i, i + batchSize);
