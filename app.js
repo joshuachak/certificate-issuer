@@ -1004,30 +1004,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let needSerifFont = false;
 
         for (const cfg of objectsConfig) {
-            if (cfg.fontFamily === 'Noto Sans TC') needSansFont = true;
-            if (cfg.fontFamily === 'Noto Serif TC') needSerifFont = true;
-        }
-
-        if (outputFormat === 'text') {
-            for (const r of records) {
-                for (const cfg of objectsConfig) {
-                    let displayText = cfg.originalText;
-                    const fieldType = cfg.customFieldType;
-                    if (fieldType) {
-                        if (fieldType === 'name') displayText = r.name || "";
-                        else if (fieldType === 'date') displayText = r.date || "";
-                        else if (fieldType === 'id') displayText = r.id || "";
-                        else {
-                            displayText = r[fieldType] || r[fieldType.toLowerCase()] || r[fieldType.toUpperCase()] || "";
-                        }
-                    }
-                    if (displayText && /[^\x00-\x7F]/.test(displayText)) {
-                        let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
-                        if (isSerif) needSerifFont = true;
-                        else needSansFont = true;
-                    }
-                }
-                if (needSansFont && needSerifFont) break;
+            let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
+            let isCourier = cfg.fontFamily.toLowerCase().includes('courier');
+            
+            if (isSerif) {
+                needSerifFont = true;
+            } else if (!isCourier) {
+                needSansFont = true;
             }
         }
 
