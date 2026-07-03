@@ -369,6 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const val = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || `[${fieldType}]`;
                     o.set('text', val);
                 }
+                if (o.baseFontSize == null) o.baseFontSize = o.fontSize;
+                applyAutoFit(o); // shrink this record's text to the box if it's too wide
             }
         });
         canvas.renderAll();
@@ -467,8 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
             fontFamily: lastTextSettings.fontFamily,
             fill: lastTextSettings.fill,
             textAlign: lastTextSettings.textAlign,
-            originX: 'center', originY: 'center', customFieldType: field 
+            originX: 'center', originY: 'center', customFieldType: field
         });
+        textObj.baseFontSize = textObj.fontSize;
         canvas.add(textObj); canvas.setActiveObject(textObj);
         updatePreview();
     }
@@ -481,6 +484,40 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.on('selection:updated', onObjectSelected);
     canvas.on('selection:cleared', onObjectCleared);
     
+    // --- Auto shrink-to-fit: keep long text on one line by shrinking the font to the box ---
+    let autoFitEnabled = true;
+    const _measCanvas = document.createElement('canvas');
+    const _measCtx = _measCanvas.getContext('2d');
+    function measureLongestLineWidth(text, fontSize, fontFamily) {
+        _measCtx.font = `${fontSize}px "${fontFamily}", "Noto Sans TC", sans-serif`;
+        let max = 0;
+        String(text).split('\n').forEach(line => { const w = _measCtx.measureText(line).width; if (w > max) max = w; });
+        return max;
+    }
+    function fittedFontSize(text, baseSize, boxWidth, fontFamily) {
+        if (!text || boxWidth <= 0) return baseSize;
+        const w = measureLongestLineWidth(text, baseSize, fontFamily);
+        if (w <= boxWidth || w === 0) return baseSize;
+        return Math.max(6, baseSize * (boxWidth / w));
+    }
+    // Set a textbox's rendered fontSize to fit its box width, driven by its untouched baseFontSize.
+    function applyAutoFit(obj) {
+        if (!obj || obj.type !== 'textbox') return;
+        const base = obj.baseFontSize != null ? obj.baseFontSize : obj.fontSize;
+        const boxW = obj.width * (obj.scaleX || 1);
+        const size = autoFitEnabled ? fittedFontSize(obj.text, base, boxW, obj.fontFamily) : base;
+        if (Math.abs(obj.fontSize - size) > 0.01) obj.set('fontSize', size);
+    }
+    // Resolve the text a field config shows for a record (mirrors the export/preview logic).
+    function displayTextForRecord(cfg, record) {
+        const ft = cfg.customFieldType;
+        if (!ft) return cfg.originalText;
+        if (ft === 'name') return record.name || '';
+        if (ft === 'date') return record.date || '';
+        if (ft === 'id') return record.id || '';
+        return record[ft] || record[ft.toLowerCase()] || record[ft.toUpperCase()] || '';
+    }
+
     // The two Noto faces are the only fonts actually embedded. Map any family name
     // (incl. legacy layouts using Times/Lora/Cinzel/etc.) to the face it renders as,
     // mirroring the serif detection used in the export paths.
@@ -506,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stylingControls.style.display = 'block';
                 alignmentControls.style.display = 'block';
                 btnDelete.disabled = false;
-                fontSizeInput.value = obj.fontSize;
+                fontSizeInput.value = obj.baseFontSize != null ? obj.baseFontSize : obj.fontSize;
                 fontFamilySelect.value = effectiveFontFamily(obj.fontFamily);
                 posXInput.value = Math.round(obj.left);
                 posYInput.value = Math.round(obj.top);
@@ -604,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 height: o.height,
                 scaleX: o.scaleX,
                 scaleY: o.scaleY,
-                fontSize: o.fontSize,
+                fontSize: o.baseFontSize != null ? o.baseFontSize : o.fontSize,
                 fontFamily: o.fontFamily,
                 fill: o.fill,
                 textAlign: o.textAlign,
@@ -671,7 +708,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         transparentCorners: false,
                         padding: 5
                     });
-                    
+                    textbox.baseFontSize = cfg.fontSize; // imported size is the base for auto-fit
+
                     // Enable/disable standard scaling/controls
                     textbox.setControlsVisibility({
                         mt: false,
@@ -862,7 +900,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const obj = canvas.getActiveObject();
         if (obj) {
             const val = parseInt(e.target.value) || 60;
-            obj.set('fontSize', val);
+            obj.baseFontSize = val;
+            applyAutoFit(obj); // sets rendered fontSize (== val unless the current text overflows)
+            if (obj.fontSize === val) obj.set('fontSize', val);
             canvas.renderAll();
             lastTextSettings.fontSize = val;
         }
@@ -995,6 +1035,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Commit fine-tuning (arrow nudge / X-Y-W inputs) into history on release.
     [posXInput, posYInput, boxWInput].forEach(inp => inp.addEventListener('change', saveState));
 
+    // Global auto shrink-to-fit toggle.
+    const autoFitToggle = document.getElementById('auto-fit-toggle');
+    if (autoFitToggle) autoFitToggle.addEventListener('change', (e) => {
+        autoFitEnabled = e.target.checked;
+        canvas.getObjects().forEach(o => { if (o.type === 'textbox') applyAutoFit(o); });
+        canvas.renderAll();
+    });
+
     document.querySelectorAll('.color-swatch').forEach(swatch => {
         swatch.addEventListener('click', () => {
             const color = swatch.dataset.color;
@@ -1124,9 +1172,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const yMax = mediaBox.y + height - (top * scaleY);
                 const pdfWidth = actualWidth * scaleX;
                 const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
-                const pdfFontSize = rawFontSize * rawScaleY * scaleY;
+                let pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                 const lines = displayText.split('\n');
+                if (autoFitEnabled) { // shrink so the widest line fits the box (matches editor auto-fit)
+                    let widest = 0;
+                    for (const l of lines) { const w = font.widthOfTextAtSize(l || "", pdfFontSize); if (w > widest) widest = w; }
+                    if (widest > pdfWidth && widest > 0) pdfFontSize = Math.max(6 * scaleY, pdfFontSize * (pdfWidth / widest));
+                }
                 const lineSpacing = pdfFontSize * 1.31; // fabric lineHeight(1.16) × _fontSizeMult(1.13)
 
                 for (let j = 0; j < lines.length; j++) {
@@ -1192,8 +1245,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const { text, ...cleanOptions } = cfg;
                         vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
                     });
+                    vCanvas.getObjects().forEach(o => { if (o.type === 'textbox') applyAutoFit(o); });
                     vCanvas.renderAll();
-                    
+
                     try {
                         const { jsPDF } = window.jspdf;
                         const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
@@ -1270,10 +1324,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const objectsConfig = canvas.getObjects()
             .filter(o => !o.isGuideLine) 
             .map(o => ({
-                originalText: o.text, left: o.left, top: o.top, width: o.width, height: o.height, fontSize: o.fontSize,
+                originalText: o.text, left: o.left, top: o.top, width: o.width, height: o.height,
+                fontSize: o.baseFontSize != null ? o.baseFontSize : o.fontSize,
                 fontFamily: o.fontFamily, fill: o.fill, textAlign: o.textAlign, originX: o.originX,
                 originY: o.originY, customFieldType: o.customFieldType, scaleX: o.scaleX, scaleY: o.scaleY
             }));
+
+        // Warn (with examples) about records whose text is wider than its box; auto-fit will shrink them.
+        if (autoFitEnabled) {
+            const affected = new Set();
+            records.forEach(rec => {
+                objectsConfig.forEach(cfg => {
+                    if (!cfg.customFieldType) return;
+                    const text = displayTextForRecord(cfg, rec);
+                    if (!text) return;
+                    const boxW = (typeof cfg.width === 'number' ? cfg.width : 100) * (cfg.scaleX || 1);
+                    if (measureLongestLineWidth(text, cfg.fontSize, cfg.fontFamily) > boxW) {
+                        affected.add(rec.name || rec.id || text);
+                    }
+                });
+            });
+            if (affected.size) {
+                const dict = translations[currentLang] || translations['en'];
+                const tmpl = dict.overflow_confirm || translations['en'].overflow_confirm;
+                const eg = [...affected].slice(0, 5).join('、') + (affected.size > 5 ? ' …' : '');
+                const msg = tmpl.replace('{n}', affected.size).replace('{eg}', eg);
+                if (!confirm(msg)) {
+                    btnGenerate.disabled = false; progressContainer.style.display = 'none';
+                    return;
+                }
+            }
+        }
 
         const zip = new JSZip();
         const batchSize = Math.min(Math.floor((navigator.hardwareConcurrency || 4) * 1.5), Math.floor((navigator.deviceMemory || 4) * 3), 20);
@@ -1434,9 +1515,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         const yMax = mediaBox.y + height - (top * scaleY);
                         const pdfWidth = actualWidth * scaleX;
                         const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
-                        const pdfFontSize = rawFontSize * rawScaleY * scaleY;
+                        let pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                         const lines = displayText.split('\n');
+                        if (autoFitEnabled) { // shrink so the widest line fits the box (matches editor auto-fit)
+                            let widest = 0;
+                            for (const l of lines) { const w = font.widthOfTextAtSize(l || "", pdfFontSize); if (w > widest) widest = w; }
+                            if (widest > pdfWidth && widest > 0) pdfFontSize = Math.max(6 * scaleY, pdfFontSize * (pdfWidth / widest));
+                        }
                         const lineSpacing = pdfFontSize * 1.31; // fabric lineHeight(1.16) × _fontSizeMult(1.13)
 
                         for (let j = 0; j < lines.length; j++) {
@@ -1570,6 +1656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const { text, ...cleanOptions } = cfg;
                         vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
                     });
+                    vCanvas.getObjects().forEach(o => { if (o.type === 'textbox') applyAutoFit(o); });
                     vCanvas.renderAll();
 
                     if (i > 0) {
