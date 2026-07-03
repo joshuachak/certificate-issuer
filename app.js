@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
         backgroundColor: '#fff',
         targetFindTolerance: 15
     });
+    window.canvas = canvas;
     
     // UI Elements
     const templateUpload = document.getElementById('template-upload');
