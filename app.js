@@ -682,6 +682,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
             const pdfDoc = await PDFDocument.load(originalPDFBytes);
+            
+            if (chineseFontBytes && window.fontkit) {
+                pdfDoc.registerFontkit(window.fontkit);
+            }
+
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
