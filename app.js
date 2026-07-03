@@ -864,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const objectsConfig = canvas.getObjects()
             .filter(o => !o.isGuideLine) 
             .map(o => ({
-                originalText: o.text, left: o.left, top: o.top, width: o.width, fontSize: o.fontSize,
+                originalText: o.text, left: o.left, top: o.top, width: o.width, height: o.height, fontSize: o.fontSize,
                 fontFamily: o.fontFamily, fill: o.fill, textAlign: o.textAlign, originX: o.originX,
                 originY: o.originY, customFieldType: o.customFieldType, scaleX: o.scaleX, scaleY: o.scaleY
             }));
