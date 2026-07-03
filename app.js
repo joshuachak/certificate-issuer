@@ -691,8 +691,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
 
-            const scaleX = width / templateData.width;
-            const scaleY = height / templateData.height;
+            let scaleX = width / (templateData.width || 1);
+            let scaleY = height / (templateData.height || 1);
+            if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
+            if (isNaN(scaleY) || !isFinite(scaleY)) scaleY = 1;
 
             let customFont = null;
             if (chineseFontBytes) {
@@ -726,28 +728,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
                 }
 
-                const actualWidth = cfg.width * (cfg.scaleX || 1);
-                const actualHeight = cfg.height * (cfg.scaleY || 1);
+                const rawWidth = typeof cfg.width === 'number' && !isNaN(cfg.width) ? cfg.width : 100;
+                const rawHeight = typeof cfg.height === 'number' && !isNaN(cfg.height) ? cfg.height : (cfg.fontSize || 20) * 1.2;
+                const rawScaleX = typeof cfg.scaleX === 'number' && !isNaN(cfg.scaleX) ? cfg.scaleX : 1;
+                const rawScaleY = typeof cfg.scaleY === 'number' && !isNaN(cfg.scaleY) ? cfg.scaleY : 1;
 
-                let left = cfg.left;
+                const actualWidth = rawWidth * rawScaleX;
+                const actualHeight = rawHeight * rawScaleY;
+
+                let left = typeof cfg.left === 'number' && !isNaN(cfg.left) ? cfg.left : 0;
                 if (cfg.originX === 'center') {
-                    left = cfg.left - actualWidth / 2;
+                    left = left - actualWidth / 2;
                 } else if (cfg.originX === 'right') {
-                    left = cfg.left - actualWidth;
+                    left = left - actualWidth;
                 }
 
-                let top = cfg.top;
+                let top = typeof cfg.top === 'number' && !isNaN(cfg.top) ? cfg.top : 0;
                 if (cfg.originY === 'center') {
-                    top = cfg.top - actualHeight / 2;
+                    top = top - actualHeight / 2;
                 } else if (cfg.originY === 'bottom') {
-                    top = cfg.top - actualHeight;
+                    top = top - actualHeight;
                 }
 
                 const xMin = left * scaleX;
                 const yMax = height - (top * scaleY);
                 const pdfWidth = actualWidth * scaleX;
                 const pdfHeight = actualHeight * scaleY;
-                const pdfFontSize = cfg.fontSize * (cfg.scaleY || 1) * scaleY;
+                const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
+                const pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                 const lines = displayText.split('\n');
                 const lineSpacing = pdfFontSize * 1.2;
@@ -948,8 +956,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const srcDoc = await PDFDocument.load(originalPDFBytes);
                 const templatePage = srcDoc.getPages()[0];
                 const { width, height } = templatePage.getSize();
-                const scaleX = width / templateImageWidth;
-                const scaleY = height / templateImageHeight;
+                let scaleX = width / (templateImageWidth || 1);
+                let scaleY = height / (templateImageHeight || 1);
+                if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
+                if (isNaN(scaleY) || !isFinite(scaleY)) scaleY = 1;
 
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
@@ -982,28 +992,34 @@ document.addEventListener('DOMContentLoaded', () => {
                             else if (cfg.fontFamily.toLowerCase().includes('courier')) font = courierFont;
                         }
 
-                        const actualWidth = cfg.width * (cfg.scaleX || 1);
-                        const actualHeight = cfg.height * (cfg.scaleY || 1);
+                        const rawWidth = typeof cfg.width === 'number' && !isNaN(cfg.width) ? cfg.width : 100;
+                        const rawHeight = typeof cfg.height === 'number' && !isNaN(cfg.height) ? cfg.height : (cfg.fontSize || 20) * 1.2;
+                        const rawScaleX = typeof cfg.scaleX === 'number' && !isNaN(cfg.scaleX) ? cfg.scaleX : 1;
+                        const rawScaleY = typeof cfg.scaleY === 'number' && !isNaN(cfg.scaleY) ? cfg.scaleY : 1;
 
-                        let left = cfg.left;
+                        const actualWidth = rawWidth * rawScaleX;
+                        const actualHeight = rawHeight * rawScaleY;
+
+                        let left = typeof cfg.left === 'number' && !isNaN(cfg.left) ? cfg.left : 0;
                         if (cfg.originX === 'center') {
-                            left = cfg.left - actualWidth / 2;
+                            left = left - actualWidth / 2;
                         } else if (cfg.originX === 'right') {
-                            left = cfg.left - actualWidth;
+                            left = left - actualWidth;
                         }
 
-                        let top = cfg.top;
+                        let top = typeof cfg.top === 'number' && !isNaN(cfg.top) ? cfg.top : 0;
                         if (cfg.originY === 'center') {
-                            top = cfg.top - actualHeight / 2;
+                            top = top - actualHeight / 2;
                         } else if (cfg.originY === 'bottom') {
-                            top = cfg.top - actualHeight;
+                            top = top - actualHeight;
                         }
 
                         const xMin = left * scaleX;
                         const yMax = height - (top * scaleY);
                         const pdfWidth = actualWidth * scaleX;
                         const pdfHeight = actualHeight * scaleY;
-                        const pdfFontSize = cfg.fontSize * (cfg.scaleY || 1) * scaleY;
+                        const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
+                        const pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                         const lines = displayText.split('\n');
                         const lineSpacing = pdfFontSize * 1.2;
