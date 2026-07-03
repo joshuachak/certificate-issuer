@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let parsedHeaders = ['name', 'email', 'date', 'id'];
     let cachedChineseFontBytes = null;
 
-    const CHINESE_FONT_URL = 'https://cdn.jsdelivr.net/gh/lxgw/LxgwWenKai-Lite@main/fonts/TTF/LXGWWenKaiLite-Regular.ttf';
+    const CHINESE_FONT_URL = 'fonts/LXGWWenKaiLite-Regular.ttf';
 
     async function loadChineseFont() {
         if (cachedChineseFontBytes) return cachedChineseFontBytes;
