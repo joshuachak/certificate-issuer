@@ -122,6 +122,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // State for custom fields
     let customFields = []; // Array of { key: string, label: string }
     let parsedHeaders = ['name', 'email', 'date', 'id'];
+    let cachedChineseFontBytes = null;
+
+    const CHINESE_FONT_URL = 'https://cdn.jsdelivr.net/gh/lxgw/LxgwWenKai-Lite@main/fonts/TTF/LXGWWenKaiLite-Regular.ttf';
+
+    async function loadChineseFont() {
+        if (cachedChineseFontBytes) return cachedChineseFontBytes;
+        progressContainer.style.display = 'block';
+        progressFill.style.width = '20%';
+        progressText.innerText = "Downloading Chinese Font (約 13MB, 僅需下載一次)...";
+        
+        try {
+            const res = await fetch(CHINESE_FONT_URL);
+            if (!res.ok) throw new Error("字型伺服器回應錯誤");
+            const buffer = await res.arrayBuffer();
+            cachedChineseFontBytes = new Uint8Array(buffer);
+            return cachedChineseFontBytes;
+        } catch (err) {
+            throw new Error("無法下載中文字型，請檢查您的網路連線：" + err.message);
+        }
+    }
 
     const standardKeys = new Set(['name', 'email', 'date', 'id', 'issuance number', 'mail', '姓名', '日期', '學號', '編號', '郵件', 'attachment_filename']);
 
@@ -657,44 +677,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Generation Logic ---
-    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat) {
-        // Check if there are non-ASCII characters in any fields to be rendered
-        let hasUnicode = false;
-        for (const cfg of objectsConfig) {
-            let displayText = cfg.originalText;
-            const fieldType = cfg.customFieldType;
-            if (fieldType) {
-                if (fieldType === 'name') displayText = record.name || "";
-                else if (fieldType === 'date') displayText = record.date || "";
-                else if (fieldType === 'id') displayText = record.id || "";
-                else {
-                    displayText = record[fieldType] || record[fieldType.toLowerCase()] || record[fieldType.toUpperCase()] || "";
-                }
-            }
-            if (displayText && /[^\x00-\x7F]/.test(displayText)) {
-                hasUnicode = true;
-                break;
-            }
-        }
-
-        let effectiveFormat = outputFormat;
-        if (hasUnicode && outputFormat === 'text') {
-            console.warn("Detected non-ASCII (Unicode) characters. Falling back to Image PDF format for compatibility.");
-            effectiveFormat = 'image';
-        }
-
+    async function generateCertificateBlob(record, templateData, objectsConfig, outputFormat, chineseFontBytes) {
         // Mode A: PDF Overlay using pdf-lib (Preserves original PDF content)
-        if (effectiveFormat === 'text' && templateIsPDF && originalPDFBytes) {
+        if (outputFormat === 'text' && templateIsPDF && originalPDFBytes) {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
             const pdfDoc = await PDFDocument.load(originalPDFBytes);
             const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             const { width, height } = firstPage.getSize();
 
-            // Coordinate Mapping: Fabric (px) -> PDF Points
-            // Note: Fabric 0,0 is Top-Left. PDF-Lib 0,0 is Bottom-Left.
             const scaleX = width / templateData.width;
             const scaleY = height / templateData.height;
+
+            let customFont = null;
+            if (chineseFontBytes) {
+                customFont = await pdfDoc.embedFont(chineseFontBytes);
+            }
 
             for (const cfg of objectsConfig) {
                 let displayText = cfg.originalText;
@@ -714,9 +712,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!displayText) continue;
 
                 const color = hexToRgb(cfg.fill);
-                let font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-                if (cfg.fontFamily.toLowerCase().includes('times')) font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-                else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
+                let font;
+                if (/[^\x00-\x7F]/.test(displayText) && customFont) {
+                    font = customFont;
+                } else {
+                    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                    if (cfg.fontFamily.toLowerCase().includes('times')) font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+                    else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
+                }
 
                 // Calculate positions
                 const pdfFontSize = cfg.fontSize * 1.0 * scaleY; 
@@ -742,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Mode B: jsPDF Fallback (For Images or Flattened output)
         const vCanvas = new fabric.StaticCanvas(null, { width: templateData.width, height: templateData.height });
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             fabric.util.loadImage(templateData.bg, (imgElement) => {
                 const fabricImg = new fabric.Image(imgElement, { originX: 'left', originY: 'top' });
                 vCanvas.setBackgroundImage(fabricImg, () => {
@@ -764,22 +767,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         vCanvas.add(new fabric.Textbox(displayText, { ...cleanOptions }));
                     });
                     vCanvas.renderAll();
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
-                    if (effectiveFormat === 'image') {
-                        pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateData.width, templateData.height);
-                    } else {
-                        pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
-                        vCanvas.getObjects().forEach(o => {
-                            if (o.type === 'textbox' || o.type === 'text') {
-                                let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
-                                pdf.setFont(font, 'normal').setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
-                                pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
+                    
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF({ orientation: templateData.width > templateData.height ? 'l' : 'p', unit: 'px', format: [templateData.width, templateData.height], hotfixes: ["px_scaling"] });
+                        
+                        if (outputFormat === 'image') {
+                            pdf.addImage(vCanvas.toDataURL({ format: 'jpeg', quality: 0.92 }), 'JPEG', 0, 0, templateData.width, templateData.height);
+                        } else {
+                            pdf.addImage(templateData.bg, 'JPEG', 0, 0, templateData.width, templateData.height);
+                            
+                            if (chineseFontBytes) {
+                                const base64Font = await new Promise((res) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => res(reader.result.split(',')[1]);
+                                    reader.readAsDataURL(new Blob([chineseFontBytes]));
+                                });
+                                pdf.addFileToVFS('CustomFont.ttf', base64Font);
+                                pdf.addFont('CustomFont.ttf', 'CustomFont', 'normal');
                             }
-                        });
+
+                            vCanvas.getObjects().forEach(o => {
+                                if (o.type === 'textbox' || o.type === 'text') {
+                                    if (/[^\x00-\x7F]/.test(o.text) && chineseFontBytes) {
+                                        pdf.setFont('CustomFont', 'normal');
+                                    } else {
+                                        let font = o.fontFamily.toLowerCase().includes('times') ? 'times' : (o.fontFamily.toLowerCase().includes('courier') ? 'courier' : 'helvetica');
+                                        pdf.setFont(font, 'normal');
+                                    }
+                                    pdf.setFontSize(o.fontSize * 1.0).setTextColor(o.fill);
+                                    pdf.text(o.text, o.left, o.top, { align: o.textAlign, baseline: 'middle', maxWidth: o.getScaledWidth() });
+                                }
+                            });
+                        }
+                        vCanvas.dispose();
+                        resolve({ name: record.name, id: record.id, data: pdf.output('arraybuffer') });
+                    } catch (err) {
+                        vCanvas.dispose();
+                        reject(err);
                     }
-                    vCanvas.dispose();
-                    resolve({ name: record.name, id: record.id, data: pdf.output('arraybuffer') });
                 });
             });
         });
@@ -805,26 +831,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const batchSize = Math.min(Math.floor((navigator.hardwareConcurrency || 4) * 1.5), Math.floor((navigator.deviceMemory || 4) * 3), 20);
         let completed = 0;
         const dict = translations[currentLang];
-        
-        const uniqueHeaders = [];
-        parsedHeaders.forEach(h => {
-            const trimmed = h.trim();
-            if (trimmed && !uniqueHeaders.some(uh => uh.toLowerCase() === trimmed.toLowerCase())) {
-                uniqueHeaders.push(trimmed);
+
+        // 1. Detect if custom Chinese font is needed
+        let needChineseFont = false;
+        if (outputFormat === 'text') {
+            for (const r of records) {
+                for (const cfg of objectsConfig) {
+                    let displayText = cfg.originalText;
+                    const fieldType = cfg.customFieldType;
+                    if (fieldType) {
+                        if (fieldType === 'name') displayText = r.name || "";
+                        else if (fieldType === 'date') displayText = r.date || "";
+                        else if (fieldType === 'id') displayText = r.id || "";
+                        else {
+                            displayText = r[fieldType] || r[fieldType.toLowerCase()] || r[fieldType.toUpperCase()] || "";
+                        }
+                    }
+                    if (displayText && /[^\x00-\x7F]/.test(displayText)) {
+                        needChineseFont = true;
+                        break;
+                    }
+                }
+                if (needChineseFont) break;
             }
-        });
-        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'name')) uniqueHeaders.unshift('Name');
-        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'email')) uniqueHeaders.push('Email');
-        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'date')) uniqueHeaders.push('Date');
-        if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'id')) uniqueHeaders.push('ID');
+        }
 
-        const finalHeaders = uniqueHeaders.filter(h => h && h.trim() !== '');
-        let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
-
+        let fontBytes = null;
         try {
+            if (needChineseFont) {
+                fontBytes = await loadChineseFont();
+            }
+
+            const uniqueHeaders = [];
+            parsedHeaders.forEach(h => {
+                const trimmed = h.trim();
+                if (trimmed && !uniqueHeaders.some(uh => uh.toLowerCase() === trimmed.toLowerCase())) {
+                    uniqueHeaders.push(trimmed);
+                }
+            });
+            if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'name')) uniqueHeaders.unshift('Name');
+            if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'email')) uniqueHeaders.push('Email');
+            if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'date')) uniqueHeaders.push('Date');
+            if (!uniqueHeaders.some(uh => uh.toLowerCase() === 'id')) uniqueHeaders.push('ID');
+
+            const finalHeaders = uniqueHeaders.filter(h => h && h.trim() !== '');
+            let mailMergeData = finalHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + ',"Attachment_Filename"\n';
+
             for (let i = 0; i < records.length; i += batchSize) {
                 const batch = records.slice(i, i + batchSize);
-                const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat)));
+                const results = await Promise.all(batch.map(r => generateCertificateBlob(r, {bg: bgDataURL, width: templateImageWidth, height: templateImageHeight}, objectsConfig, outputFormat, fontBytes)));
                 results.forEach((res, idx) => {
                     const record = batch[idx];
                     let namePart = (res.name || `student_${completed + idx + 1}`).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
