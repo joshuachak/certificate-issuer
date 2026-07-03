@@ -726,24 +726,60 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (cfg.fontFamily.toLowerCase().includes('courier')) font = await pdfDoc.embedFont(StandardFonts.Courier);
                 }
 
-                // Calculate positions
-                const pdfFontSize = cfg.fontSize * 1.0 * scaleY; 
-                const textWidth = font.widthOfTextAtSize(displayText, pdfFontSize);
-                
-                let x = cfg.left * scaleX;
-                let y = height - (cfg.top * scaleY); // Flip Y axis
+                const actualWidth = cfg.width * (cfg.scaleX || 1);
+                const actualHeight = cfg.height * (cfg.scaleY || 1);
 
-                // Alignment logic
-                if (cfg.textAlign === 'center') x -= textWidth / 2;
-                else if (cfg.textAlign === 'right') x -= textWidth;
+                let left = cfg.left;
+                if (cfg.originX === 'center') {
+                    left = cfg.left - actualWidth / 2;
+                } else if (cfg.originX === 'right') {
+                    left = cfg.left - actualWidth;
+                }
 
-                firstPage.drawText(displayText, {
-                    x: x,
-                    y: y - (pdfFontSize / 4), // Middle baseline adjustment
-                    size: pdfFontSize,
-                    font: font,
-                    color: rgb(color.r, color.g, color.b),
-                });
+                let top = cfg.top;
+                if (cfg.originY === 'center') {
+                    top = cfg.top - actualHeight / 2;
+                } else if (cfg.originY === 'bottom') {
+                    top = cfg.top - actualHeight;
+                }
+
+                const xMin = left * scaleX;
+                const yMax = height - (top * scaleY);
+                const pdfWidth = actualWidth * scaleX;
+                const pdfHeight = actualHeight * scaleY;
+                const pdfFontSize = cfg.fontSize * (cfg.scaleY || 1) * scaleY;
+
+                const lines = displayText.split('\n');
+                const lineSpacing = pdfFontSize * 1.2;
+
+                for (let j = 0; j < lines.length; j++) {
+                    const lineText = lines[j];
+                    if (!lineText && lines.length > 1) continue;
+
+                    const lineWidth = font.widthOfTextAtSize(lineText || "", pdfFontSize);
+                    
+                    let xStart = xMin;
+                    if (cfg.textAlign === 'center') {
+                        xStart = xMin + (pdfWidth - lineWidth) / 2;
+                    } else if (cfg.textAlign === 'right') {
+                        xStart = xMin + pdfWidth - lineWidth;
+                    }
+
+                    let yBaseline;
+                    if (lines.length === 1) {
+                        yBaseline = yMax - pdfHeight / 2 - (pdfFontSize * 0.15);
+                    } else {
+                        yBaseline = yMax - (pdfFontSize * 0.85) - (j * lineSpacing);
+                    }
+
+                    firstPage.drawText(lineText || "", {
+                        x: xStart,
+                        y: yBaseline,
+                        size: pdfFontSize,
+                        font: font,
+                        color: rgb(color.r, color.g, color.b),
+                    });
+                }
             }
             return { name: record.name, id: record.id, data: await pdfDoc.save() };
         } 
@@ -940,22 +976,60 @@ document.addEventListener('DOMContentLoaded', () => {
                             else if (cfg.fontFamily.toLowerCase().includes('courier')) font = courierFont;
                         }
 
-                        const pdfFontSize = cfg.fontSize * 1.0 * scaleY; 
-                        const textWidth = font.widthOfTextAtSize(displayText, pdfFontSize);
-                        
-                        let x = cfg.left * scaleX;
-                        let y = height - (cfg.top * scaleY);
+                        const actualWidth = cfg.width * (cfg.scaleX || 1);
+                        const actualHeight = cfg.height * (cfg.scaleY || 1);
 
-                        if (cfg.textAlign === 'center') x -= textWidth / 2;
-                        else if (cfg.textAlign === 'right') x -= textWidth;
+                        let left = cfg.left;
+                        if (cfg.originX === 'center') {
+                            left = cfg.left - actualWidth / 2;
+                        } else if (cfg.originX === 'right') {
+                            left = cfg.left - actualWidth;
+                        }
 
-                        page.drawText(displayText, {
-                            x: x,
-                            y: y - (pdfFontSize / 4), 
-                            size: pdfFontSize,
-                            font: font,
-                            color: rgb(color.r, color.g, color.b),
-                        });
+                        let top = cfg.top;
+                        if (cfg.originY === 'center') {
+                            top = cfg.top - actualHeight / 2;
+                        } else if (cfg.originY === 'bottom') {
+                            top = cfg.top - actualHeight;
+                        }
+
+                        const xMin = left * scaleX;
+                        const yMax = height - (top * scaleY);
+                        const pdfWidth = actualWidth * scaleX;
+                        const pdfHeight = actualHeight * scaleY;
+                        const pdfFontSize = cfg.fontSize * (cfg.scaleY || 1) * scaleY;
+
+                        const lines = displayText.split('\n');
+                        const lineSpacing = pdfFontSize * 1.2;
+
+                        for (let j = 0; j < lines.length; j++) {
+                            const lineText = lines[j];
+                            if (!lineText && lines.length > 1) continue;
+
+                            const lineWidth = font.widthOfTextAtSize(lineText || "", pdfFontSize);
+                            
+                            let xStart = xMin;
+                            if (cfg.textAlign === 'center') {
+                                xStart = xMin + (pdfWidth - lineWidth) / 2;
+                            } else if (cfg.textAlign === 'right') {
+                                xStart = xMin + pdfWidth - lineWidth;
+                            }
+
+                            let yBaseline;
+                            if (lines.length === 1) {
+                                yBaseline = yMax - pdfHeight / 2 - (pdfFontSize * 0.15);
+                            } else {
+                                yBaseline = yMax - (pdfFontSize * 0.85) - (j * lineSpacing);
+                            }
+
+                            page.drawText(lineText || "", {
+                                x: xStart,
+                                y: yBaseline,
+                                size: pdfFontSize,
+                                font: font,
+                                color: rgb(color.r, color.g, color.b),
+                            });
+                        }
                     }
 
                     completed++;
@@ -964,11 +1038,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressText.innerText = `${completed} / ${records.length} ${dict.generating}`;
                 }
 
+                // Compile and reload the document to trigger font subsetting and keep output size tiny
+                progressText.innerText = "Subsetting fonts...";
+                const compiledBytes = await mainPdfDoc.save();
+                const splitDocSrc = await PDFDocument.load(compiledBytes);
+
                 const savingText = currentLang.startsWith('zh') ? "正在儲存證書" : "Saving certificates";
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
                     const singleDoc = await PDFDocument.create();
-                    const [pageCopy] = await singleDoc.copyPages(mainPdfDoc, [i]);
+                    const [pageCopy] = await singleDoc.copyPages(splitDocSrc, [i]);
                     singleDoc.addPage(pageCopy);
                     const singlePdfBytes = await singleDoc.save();
 
