@@ -26,7 +26,7 @@
          are intentionally NOT imported so the local Noto aliases in styles.css win, keeping the canvas
          (and image-mode raster) identical to the Noto fonts embedded into text-over-PDF output. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.3">
+    <link rel="stylesheet" href="styles.css?v=1.1.4">
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -42,7 +42,7 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     
     <!-- Translation Data -->
-    <script src="i18n.js?v=1.1.3"></script>
+    <script src="i18n.js?v=1.1.4"></script>
 </head>
 <body>
     <div class="app-container">
@@ -253,17 +253,26 @@
                 <section class="control-group action-group" style="border-bottom: none;">
                     <h2 data-i18n="step_4">4. Export Settings</h2>
                     <div class="output-options">
-                        <label class="radio-label" title="Safest. Burns text into image.">
-                            <input type="radio" name="output-format" value="image" checked>
-                            <span data-i18n="format_image">Image PDF (Fast & Secure)</span>
+                        <label class="radio-label" style="align-items:flex-start;">
+                            <input type="radio" name="output-format" value="image" checked style="margin-top:0.2rem;">
+                            <span style="display:flex; flex-direction:column; gap:0.15rem;">
+                                <span><span data-i18n="format_image">Image PDF (Fast & Secure)</span> <span data-i18n="badge_recommended" style="font-size:0.68rem; color:#fff; background:var(--primary); padding:1px 7px; border-radius:999px;">Recommended</span></span>
+                                <small data-i18n="format_image_desc" style="color:var(--text-light); font-size:0.72rem; line-height:1.35;">Pixel-perfect, exactly as previewed. One file per person, packaged as a ZIP. Text is not selectable.</small>
+                            </span>
                         </label>
-                        <label class="radio-label" title="Keeps text selectable. Split into individual PDFs in ZIP.">
-                            <input type="radio" name="output-format" value="text">
-                            <span data-i18n="format_text">Text over PDF (Selectable)</span>
+                        <label class="radio-label" style="align-items:flex-start;">
+                            <input type="radio" name="output-format" value="text" style="margin-top:0.2rem;">
+                            <span style="display:flex; flex-direction:column; gap:0.15rem;">
+                                <span data-i18n="format_text">Text over PDF (Selectable)</span>
+                                <small data-i18n="format_text_desc" style="color:var(--text-light); font-size:0.72rem; line-height:1.35;">Selectable / copyable text. One file per person, packaged as a ZIP.</small>
+                            </span>
                         </label>
-                        <label class="radio-label" title="Keeps text selectable. All certificates combined into a single PDF file.">
-                            <input type="radio" name="output-format" value="single-pdf">
-                            <span data-i18n="format_single_pdf">Text over PDF (Single File, All Pages)</span>
+                        <label class="radio-label" style="align-items:flex-start;">
+                            <input type="radio" name="output-format" value="single-pdf" style="margin-top:0.2rem;">
+                            <span style="display:flex; flex-direction:column; gap:0.15rem;">
+                                <span data-i18n="format_single_pdf">Text over PDF (Single File, All Pages)</span>
+                                <small data-i18n="format_single_pdf_desc" style="color:var(--text-light); font-size:0.72rem; line-height:1.35;">Selectable text. All certificates combined into one PDF file.</small>
+                            </span>
                         </label>
                     </div>
                     <button id="generate-btn" class="primary-btn" style="margin-top: 1.5rem;">
@@ -304,6 +313,6 @@
             </main>
         </div>
     </div>
-    <script src="app.js?v=1.1.3"></script>
+    <script src="app.js?v=1.1.4"></script>
 </body>
 </html>

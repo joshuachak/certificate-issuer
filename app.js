@@ -910,6 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
         obj.setCoords();
         canvas.renderAll();
         syncPositionInputs();
+        if (typeof saveState === 'function') saveState();
     });
     textColorInput.addEventListener('input', (e) => {
         const obj = canvas.getActiveObject();
@@ -939,6 +940,49 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
         canvas.discardActiveObject().renderAll();
     });
+
+    // --- Undo / Redo (snapshot the editable objects; background is kept separately) ---
+    let history = [];
+    let histPointer = -1;
+    let isRestoring = false;
+    const UNDO_PROPS = ['customFieldType', 'isGuideLine', 'guideType', 'originalText',
+        'selectable', 'hasControls', 'hasBorders', 'lockMovementX', 'lockMovementY', 'hoverCursor', 'padding'];
+    function snapshotState() {
+        return JSON.stringify(canvas.getObjects().map(o => o.toObject(UNDO_PROPS)));
+    }
+    function saveState() {
+        if (isRestoring) return;
+        history = history.slice(0, histPointer + 1);
+        history.push(snapshotState());
+        if (history.length > 50) history.shift();
+        histPointer = history.length - 1;
+    }
+    function restoreState(json) {
+        isRestoring = true;
+        canvas.discardActiveObject();
+        canvas.getObjects().slice().forEach(o => canvas.remove(o));
+        fabric.util.enlivenObjects(JSON.parse(json), (objs) => {
+            objs.forEach(o => canvas.add(o));
+            canvas.renderAll();
+            isRestoring = false;
+            onObjectCleared();
+        });
+    }
+    function undo() { if (histPointer > 0) { histPointer--; restoreState(history[histPointer]); } }
+    function redo() { if (histPointer < history.length - 1) { histPointer++; restoreState(history[histPointer]); } }
+    canvas.on('object:added', saveState);
+    canvas.on('object:modified', saveState);
+    canvas.on('object:removed', saveState);
+    saveState(); // initial (empty) baseline so the first add is undoable
+    document.addEventListener('keydown', (e) => {
+        if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+        const tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+    });
+    // Commit fine-tuning (arrow nudge / X-Y-W inputs) into history on release.
+    [posXInput, posYInput, boxWInput].forEach(inp => inp.addEventListener('change', saveState));
 
     document.querySelectorAll('.color-swatch').forEach(swatch => {
         swatch.addEventListener('click', () => {
