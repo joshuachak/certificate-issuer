@@ -138,14 +138,19 @@ document.addEventListener('DOMContentLoaded', () => {
         textAlign: 'center'
     };
 
-    const SANS_FONT_URL = 'fonts/NotoSansTC-Regular.ttf';
-    const SERIF_FONT_URL = 'fonts/NotoSerifTC-Regular.ttf';
+    // NOTE: These files keep their historical "TC" names so saved layout JSON
+    // (fontFamily: "Noto Sans TC" / "Noto Serif TC") still loads, but the bytes are
+    // now the fontsource Noto Sans/Serif SC static glyf TTFs — they cover BOTH
+    // Simplified and Traditional common name characters and subset (subset:true)
+    // cleanly. ?v=sc1 busts the browser cache of the old Thin-TC-only files.
+    const SANS_FONT_URL = 'fonts/NotoSansTC-Regular.ttf?v=sc1';
+    const SERIF_FONT_URL = 'fonts/NotoSerifTC-Regular.ttf?v=sc1';
 
     async function loadSansFont() {
         if (cachedSansFontBytes) return cachedSansFontBytes;
         progressContainer.style.display = 'block';
         progressFill.style.width = '20%';
-        progressText.innerText = "Downloading Noto Sans Font (約 11MB, 僅需下載一次)...";
+        progressText.innerText = "Downloading Noto Sans Font (約 2.5MB, 僅需下載一次)...";
         try {
             const res = await fetch(SANS_FONT_URL);
             if (!res.ok) throw new Error("字型伺服器回應錯誤");
@@ -161,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cachedSerifFontBytes) return cachedSerifFontBytes;
         progressContainer.style.display = 'block';
         progressFill.style.width = '20%';
-        progressText.innerText = "Downloading Noto Serif Font (約 16MB, 僅需下載一次)...";
+        progressText.innerText = "Downloading Noto Serif Font (約 3.5MB, 僅需下載一次)...";
         try {
             const res = await fetch(SERIF_FONT_URL);
             if (!res.ok) throw new Error("字型伺服器回應錯誤");
@@ -1105,11 +1110,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let sansFont = null;
             if (fonts.sansBytes) {
-                sansFont = await pdfDoc.embedFont(fonts.sansBytes);
+                sansFont = await pdfDoc.embedFont(fonts.sansBytes, { subset: true });
             }
             let serifFont = null;
             if (fonts.serifBytes) {
-                serifFont = await pdfDoc.embedFont(fonts.serifBytes);
+                serifFont = await pdfDoc.embedFont(fonts.serifBytes, { subset: true });
             }
 
             const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -1403,6 +1408,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Pre-export missing-glyph guard: open the ACTUAL export font bytes with fontkit
+            // and scan every record's field text for characters that map to glyph id 0
+            // (.notdef). Those render as black boxes / blanks in the PDF (the original bug),
+            // so warn — with the offending characters and example records — before shipping.
+            if (window.fontkit && (sansFontBytes || serifFontBytes)) {
+                let sansKit = null, serifKit = null;
+                try { if (sansFontBytes) sansKit = window.fontkit.create(sansFontBytes); } catch (e) { sansKit = null; }
+                try { if (serifFontBytes) serifKit = window.fontkit.create(serifFontBytes); } catch (e) { serifKit = null; }
+
+                const affected = new Set();
+                const missingChars = new Set();
+                for (const rec of records) {
+                    for (const cfg of objectsConfig) {
+                        if (!cfg.customFieldType) continue;
+                        const text = displayTextForRecord(cfg, rec);
+                        if (!text) continue;
+                        const ff = (cfg.fontFamily || '').toLowerCase();
+                        const isSerif = cfg.fontFamily === 'Noto Serif TC' || ff.includes('serif') || ff.includes('times') || ff.includes('lora') || ff.includes('cinzel');
+                        const isCourier = ff.includes('courier');
+                        // Courier/Helvetica/Times are Standard (Latin-only) fonts; CJK never
+                        // routes through them, so only the fontkit-embedded Noto faces matter.
+                        const kit = isSerif ? serifKit : (isCourier ? null : sansKit);
+                        if (!kit) continue;
+                        for (const ch of text) {
+                            const cp = ch.codePointAt(0);
+                            if (cp < 0x20) continue; // skip control chars (newline/tab) — never .notdef misses
+                            let gid = 0;
+                            try { gid = kit.glyphForCodePoint(cp).id; } catch (e) { gid = 0; }
+                            if (gid === 0) {
+                                missingChars.add(ch);
+                                affected.add(rec.name || rec.id || text);
+                            }
+                        }
+                    }
+                }
+
+                if (affected.size) {
+                    const gdict = translations[currentLang] || translations['en'];
+                    const gtmpl = gdict.missing_glyph_confirm || translations['en'].missing_glyph_confirm;
+                    const chars = [...missingChars].slice(0, 20).join(' ') + (missingChars.size > 20 ? ' …' : '');
+                    const eg = [...affected].slice(0, 5).join('、') + (affected.size > 5 ? ' …' : '');
+                    const gmsg = gtmpl.replace('{n}', affected.size).replace('{chars}', chars).replace('{eg}', eg);
+                    if (!confirm(gmsg)) {
+                        btnGenerate.disabled = false; progressContainer.style.display = 'none';
+                        return;
+                    }
+                }
+            }
+
             const uniqueHeaders = [];
             parsedHeaders.forEach(h => {
                 const trimmed = h.trim();
@@ -1429,11 +1483,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let sansFont = null;
                 if (sansFontBytes) {
-                    sansFont = await mainPdfDoc.embedFont(sansFontBytes);
+                    sansFont = await mainPdfDoc.embedFont(sansFontBytes, { subset: true });
                 }
                 let serifFont = null;
                 if (serifFontBytes) {
-                    serifFont = await mainPdfDoc.embedFont(serifFontBytes);
+                    serifFont = await mainPdfDoc.embedFont(serifFontBytes, { subset: true });
                 }
                 
                 const helveticaFont = await mainPdfDoc.embedFont(StandardFonts.Helvetica);
@@ -1443,24 +1497,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const srcDoc = await PDFDocument.load(originalPDFBytes);
                 const templatePage = srcDoc.getPages()[0];
                 const { width, height } = templatePage.getSize();
-                // MediaBox origin may be non-zero; copied pages inherit it. Offset overlays by
-                // it so pdf-lib drawText lands where pdf.js/preview renders the page content.
-                const mediaBox = templatePage.getMediaBox();
                 let scaleX = width / (templateImageWidth || 1);
                 let scaleY = height / (templateImageHeight || 1);
                 if (isNaN(scaleX) || !isFinite(scaleX)) scaleX = 1;
                 if (isNaN(scaleY) || !isFinite(scaleY)) scaleY = 1;
 
-                // Copy all template pages in ONE copyPages call so pdf-lib's object copier
-                // shares the template's background image across every page. Copying once per
-                // record duplicated the ~6MB background on each page (hundreds of MB for large
-                // batches); batching keeps the whole combined file at roughly one template size.
-                const copiedPages = await mainPdfDoc.copyPages(srcDoc, new Array(records.length).fill(0));
-                copiedPages.forEach(p => mainPdfDoc.addPage(p));
+                // Embed the template page ONCE as a reusable Form XObject, then stamp it onto a
+                // fresh page per record (below). The old approach — copyPages(srcDoc, fill(0)) —
+                // made pdf-lib's object copier DEDUPE the identical source page, so every copied
+                // page shared ONE content stream: each record's drawText appended to that same
+                // stream and ALL names/IDs piled onto EVERY page. It was masked only because the
+                // broken font drew them as overlapping black boxes. embedPage keeps the template
+                // stored once (no size blow-up) while giving every page its own content stream.
+                const templateXObject = await mainPdfDoc.embedPage(templatePage);
 
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
-                    const page = mainPdfDoc.getPage(i);
+                    // Fresh page with its own content stream; stamp the shared template onto it.
+                    const page = mainPdfDoc.addPage([width, height]);
+                    page.drawPage(templateXObject, { x: 0, y: 0, width, height });
 
                     for (const cfg of objectsConfig) {
                         let displayText = cfg.originalText;
@@ -1511,8 +1566,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             top = top - actualHeight;
                         }
 
-                        const xMin = mediaBox.x + left * scaleX;
-                        const yMax = mediaBox.y + height - (top * scaleY);
+                        // New page origin is (0,0) and the template XObject is drawn at (0,0),
+                        // so overlay coords need no MediaBox-origin offset (the old copyPages path
+                        // inherited the template's MediaBox origin and had to add it back).
+                        const xMin = left * scaleX;
+                        const yMax = height - (top * scaleY);
                         const pdfWidth = actualWidth * scaleX;
                         const rawFontSize = typeof cfg.fontSize === 'number' && !isNaN(cfg.fontSize) ? cfg.fontSize : 20;
                         let pdfFontSize = rawFontSize * rawScaleY * scaleY;

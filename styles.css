@@ -1,33 +1,48 @@
 /* Font Aliasing to Unify Serif and Sans-serif to Google Noto Fonts as requested */
+/* The two primary faces: bind 'Noto Sans TC' / 'Noto Serif TC' to the SAME bundled
+   (now Simplified-content) TTFs the exporter embeds, so the editor preview renders
+   Simplified names with the exact glyphs that ship — true WYSIWYG. Previously these
+   names were served only by the Google Fonts <link> (TC, no Simplified), so the editor
+   silently fell back to a system font and simplified names looked fine on screen but
+   black-boxed on export. Keeping the family key "Noto Sans TC" also lets saved layout
+   JSON (fontFamily:"Noto Sans TC") keep loading unchanged. */
+@font-face {
+    font-family: 'Noto Sans TC';
+    src: url('fonts/NotoSansTC-Regular.ttf?v=sc1') format('truetype');
+}
+@font-face {
+    font-family: 'Noto Serif TC';
+    src: url('fonts/NotoSerifTC-Regular.ttf?v=sc1') format('truetype');
+}
 @font-face {
     font-family: 'Times New Roman';
-    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSerifTC-Regular.ttf?v=sc1') format('truetype');
 }
 @font-face {
     font-family: 'Lora';
-    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSerifTC-Regular.ttf?v=sc1') format('truetype');
 }
 @font-face {
     font-family: 'Cinzel';
-    src: url('fonts/NotoSerifTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSerifTC-Regular.ttf?v=sc1') format('truetype');
 }
 @font-face {
     font-family: 'Arial';
-    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSansTC-Regular.ttf?v=sc1') format('truetype');
 }
 @font-face {
     font-family: 'Montserrat';
-    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSansTC-Regular.ttf?v=sc1') format('truetype');
 }
 /* Script fonts are classified as sans by isSerif(), so alias them to Noto Sans
    too — keeps canvas/image-mode identical to the Noto Sans embedded by single-pdf. */
 @font-face {
     font-family: 'Dancing Script';
-    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSansTC-Regular.ttf?v=sc1') format('truetype');
 }
 @font-face {
     font-family: 'Great Vibes';
-    src: url('fonts/NotoSansTC-Regular.ttf') format('truetype');
+    src: url('fonts/NotoSansTC-Regular.ttf?v=sc1') format('truetype');
 }
 
 :root {
