@@ -1408,10 +1408,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Pre-export missing-glyph guard: open the ACTUAL export font bytes with fontkit
-            // and scan every record's field text for characters that map to glyph id 0
-            // (.notdef). Those render as black boxes / blanks in the PDF (the original bug),
-            // so warn — with the offending characters and example records — before shipping.
+            // Pre-export missing-glyph guard: open the ACTUAL export font bytes with fontkit and
+            // scan every record's field text for chars that map to glyph id 0 (.notdef). We only
+            // warn here for chars that ALSO have no fontsource fallback subset available — those
+            // are genuinely unsupported (emoji, unusual scripts) and will black-box in every mode.
+            // Rare CJK chars the bundled font lacks (e.g. 嫄) DO have a subset and are fetched
+            // on-demand in the pdf-lib path below; a residual guard there catches any fetch failure.
             if (window.fontkit && (sansFontBytes || serifFontBytes)) {
                 let sansKit = null, serifKit = null;
                 try { if (sansFontBytes) sansKit = window.fontkit.create(sansFontBytes); } catch (e) { sansKit = null; }
@@ -1436,7 +1438,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (cp < 0x20) continue; // skip control chars (newline/tab) — never .notdef misses
                             let gid = 0;
                             try { gid = kit.glyphForCodePoint(cp).id; } catch (e) { gid = 0; }
-                            if (gid === 0) {
+                            // Skip chars that a fontsource fallback subset can supply on-demand.
+                            const hasFallback = window.lookupFontSubsetLabel && window.lookupFontSubsetLabel(cp);
+                            if (gid === 0 && !hasFallback) {
                                 missingChars.add(ch);
                                 affected.add(rec.name || rec.id || text);
                             }
@@ -1511,6 +1515,89 @@ document.addEventListener('DOMContentLoaded', () => {
                 // stored once (no size blow-up) while giving every page its own content stream.
                 const templateXObject = await mainPdfDoc.embedPage(templatePage);
 
+                // --- Per-character font chains + on-demand fallback for rare CJK ---
+                // The bundled Noto SC covers all common chars; rare given-name chars (e.g. 嫄) are
+                // not in it. pdf-lib's subsetter renders BLANK for a broad font and breaks outright
+                // on a MERGED font, but each fontsource per-unicode-range subset embeds cleanly on
+                // its own. So we fetch just the subset TTFs covering THIS batch's missing chars and
+                // embed each as an extra face, then pick a font PER CHARACTER in the draw loop.
+                // A chain is [{font, kit}, ...]: the bundled face first, fetched fallbacks after.
+                const buildKit = (bytes) => { try { return (bytes && window.fontkit) ? window.fontkit.create(bytes) : null; } catch (e) { return null; } };
+                const sansChain = [];
+                if (sansFont) sansChain.push({ font: sansFont, kit: buildKit(sansFontBytes) });
+                const serifChain = [];
+                if (serifFont) serifChain.push({ font: serifFont, kit: buildKit(serifFontBytes) });
+                const chainHasGlyph = (chain, cp) => chain.some(e => e.kit && e.kit.glyphForCodePoint(cp).id !== 0);
+                const pickFont = (chain, cp) => {
+                    for (const e of chain) { if (e.kit && e.kit.glyphForCodePoint(cp).id !== 0) return e.font; }
+                    return chain[0] ? chain[0].font : null;
+                };
+                const measureChars = (chain, str, size) => {
+                    let w = 0;
+                    for (const ch of str) { const f = pickFont(chain, ch.codePointAt(0)); if (f) w += f.widthOfTextAtSize(ch, size); }
+                    return w;
+                };
+                // Scan the batch for chars a face lacks, returns Set of codepoints per face key.
+                const scanMissing = () => {
+                    const miss = { sans: new Set(), serif: new Set() };
+                    for (const rec of records) for (const cfg of objectsConfig) {
+                        if (!cfg.customFieldType) continue;
+                        const text = displayTextForRecord(cfg, rec); if (!text) continue;
+                        const ff = (cfg.fontFamily || '').toLowerCase();
+                        const isSerif = cfg.fontFamily === 'Noto Serif TC' || ff.includes('serif') || ff.includes('times') || ff.includes('lora') || ff.includes('cinzel');
+                        const isCourier = ff.includes('courier');
+                        const chain = isSerif ? serifChain : (isCourier ? null : sansChain);
+                        if (!chain || !chain.length) continue;
+                        for (const ch of text) { const cp = ch.codePointAt(0); if (cp < 0x20) continue; if (!chainHasGlyph(chain, cp)) miss[isSerif ? 'serif' : 'sans'].add(cp); }
+                    }
+                    return miss;
+                };
+                if (window.fontkit && window.lookupFontSubsetLabel && (sansChain.length || serifChain.length)) {
+                    const miss = scanMissing();
+                    const V = window.FONT_SUBSET_VERSION || '5.2.9';
+                    const fetchInto = async (cps, family, chain) => {
+                        const labels = new Set();
+                        for (const cp of cps) { const l = window.lookupFontSubsetLabel(cp); if (l) labels.add(l); }
+                        for (const label of labels) {
+                            try {
+                                const res = await fetch(`https://cdn.jsdelivr.net/fontsource/fonts/${family}@${V}/${label}-400-normal.ttf`);
+                                if (!res.ok) continue;
+                                const bytes = new Uint8Array(await res.arrayBuffer());
+                                const pdfFont = await mainPdfDoc.embedFont(bytes, { subset: true });
+                                chain.push({ font: pdfFont, kit: buildKit(bytes) });
+                            } catch (e) { /* leave uncovered; the residual guard below reports it */ }
+                        }
+                    };
+                    if (miss.sans.size || miss.serif.size) progressText.innerText = "Fetching extra glyphs...";
+                    if (miss.sans.size) await fetchInto(miss.sans, 'noto-sans-sc', sansChain);
+                    if (miss.serif.size) await fetchInto(miss.serif, 'noto-serif-sc', serifChain);
+
+                    // Residual guard: chars STILL uncovered after fetch (offline / CDN failure).
+                    const after = scanMissing();
+                    const stillMissing = new Set(); const affectedRecs = new Set();
+                    if (after.sans.size || after.serif.size) {
+                        for (const rec of records) for (const cfg of objectsConfig) {
+                            if (!cfg.customFieldType) continue;
+                            const text = displayTextForRecord(cfg, rec); if (!text) continue;
+                            const ff = (cfg.fontFamily || '').toLowerCase();
+                            const isSerif = cfg.fontFamily === 'Noto Serif TC' || ff.includes('serif') || ff.includes('times') || ff.includes('lora') || ff.includes('cinzel');
+                            const isCourier = ff.includes('courier');
+                            const chain = isSerif ? serifChain : (isCourier ? null : sansChain);
+                            if (!chain || !chain.length) continue;
+                            for (const ch of text) { const cp = ch.codePointAt(0); if (cp < 0x20) continue; if (!chainHasGlyph(chain, cp)) { stillMissing.add(ch); affectedRecs.add(rec.name || rec.id || text); } }
+                        }
+                    }
+                    if (stillMissing.size) {
+                        const gd = translations[currentLang] || translations['en'];
+                        const tmpl = gd.missing_glyph_confirm || translations['en'].missing_glyph_confirm;
+                        const chars = [...stillMissing].slice(0, 20).join(' ') + (stillMissing.size > 20 ? ' …' : '');
+                        const eg = [...affectedRecs].slice(0, 5).join('、') + (affectedRecs.size > 5 ? ' …' : '');
+                        if (!confirm(tmpl.replace('{n}', affectedRecs.size).replace('{chars}', chars).replace('{eg}', eg))) {
+                            btnGenerate.disabled = false; progressContainer.style.display = 'none'; return;
+                        }
+                    }
+                }
+
                 for (let i = 0; i < records.length; i++) {
                     const record = records[i];
                     // Fresh page with its own content stream; stamp the shared template onto it.
@@ -1532,17 +1619,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!displayText) continue;
 
                         const color = hexToRgb(cfg.fill);
-                        let font;
                         let isSerif = cfg.fontFamily === 'Noto Serif TC' || cfg.fontFamily.toLowerCase().includes('serif') || cfg.fontFamily.toLowerCase().includes('times') || cfg.fontFamily.toLowerCase().includes('lora') || cfg.fontFamily.toLowerCase().includes('cinzel');
                         let isCourier = cfg.fontFamily.toLowerCase().includes('courier');
 
-                        if (isSerif) {
-                            font = serifFont || timesFont;
-                        } else if (isCourier) {
-                            font = courierFont;
-                        } else {
-                            font = sansFont || helveticaFont;
-                        }
+                        // The two embedded CJK faces draw via a per-character font CHAIN (bundled
+                        // face + on-demand fallbacks) so rare chars route to a subset that has them.
+                        // Courier/Standard fonts are Latin-only and stay single-font.
+                        let chain = null; let font;
+                        if (isSerif) { chain = serifChain.length ? serifChain : null; font = serifFont || timesFont; }
+                        else if (isCourier) { font = courierFont; }
+                        else { chain = sansChain.length ? sansChain : null; font = sansFont || helveticaFont; }
 
                         const rawWidth = typeof cfg.width === 'number' && !isNaN(cfg.width) ? cfg.width : 100;
                         const rawHeight = typeof cfg.height === 'number' && !isNaN(cfg.height) ? cfg.height : (cfg.fontSize || 20) * 1.2;
@@ -1576,9 +1662,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         let pdfFontSize = rawFontSize * rawScaleY * scaleY;
 
                         const lines = displayText.split('\n');
+                        const measureLine = (l, size) => chain ? measureChars(chain, l || "", size) : font.widthOfTextAtSize(l || "", size);
                         if (autoFitEnabled) { // shrink so the widest line fits the box (matches editor auto-fit)
                             let widest = 0;
-                            for (const l of lines) { const w = font.widthOfTextAtSize(l || "", pdfFontSize); if (w > widest) widest = w; }
+                            for (const l of lines) { const w = measureLine(l, pdfFontSize); if (w > widest) widest = w; }
                             if (widest > pdfWidth && widest > 0) pdfFontSize = Math.max(6 * scaleY, pdfFontSize * (pdfWidth / widest));
                         }
                         const lineSpacing = pdfFontSize * 1.31; // fabric lineHeight(1.16) × _fontSizeMult(1.13)
@@ -1587,8 +1674,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const lineText = lines[j];
                             if (!lineText && lines.length > 1) continue;
 
-                            const lineWidth = font.widthOfTextAtSize(lineText || "", pdfFontSize);
-                            
+                            const lineWidth = measureLine(lineText, pdfFontSize);
+
                             let xStart = xMin;
                             if (cfg.textAlign === 'center') {
                                 xStart = xMin + (pdfWidth - lineWidth) / 2;
@@ -1609,14 +1696,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             // pdf.js round-trip). Alignment above still uses the correct full-line width.
                             let charX = xStart;
                             for (const ch of (lineText || "")) {
+                                // Per-character font: bundled face, else a fetched fallback subset.
+                                const chFont = chain ? pickFont(chain, ch.codePointAt(0)) : font;
                                 page.drawText(ch, {
                                     x: charX,
                                     y: yBaseline,
                                     size: pdfFontSize,
-                                    font: font,
+                                    font: chFont,
                                     color: rgb(color.r, color.g, color.b),
                                 });
-                                charX += font.widthOfTextAtSize(ch, pdfFontSize);
+                                charX += chFont.widthOfTextAtSize(ch, pdfFontSize);
                             }
                         }
                     }

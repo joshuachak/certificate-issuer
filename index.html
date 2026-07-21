@@ -28,7 +28,7 @@
          so the editor canvas (and image-mode raster) renders the exact glyphs, incl. Simplified, that
          ship in the text-over-PDF output. No Google CJK webfont is used. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.7">
+    <link rel="stylesheet" href="styles.css?v=1.1.8">
     
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -44,7 +44,7 @@
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     
     <!-- Translation Data -->
-    <script src="i18n.js?v=1.1.7"></script>
+    <script src="i18n.js?v=1.1.8"></script>
 </head>
 <body>
     <div class="app-container">
@@ -315,6 +315,9 @@
             </main>
         </div>
     </div>
-    <script src="app.js?v=1.1.7"></script>
+    <!-- Codepoint -> fontsource subset map; lets the exporter fetch just the subset TTFs
+         covering a batch's rare CJK chars (e.g. 嫄) that the bundled Noto SC lacks. -->
+    <script src="font-subset-manifest.js?v=1.1.8"></script>
+    <script src="app.js?v=1.1.8"></script>
 </body>
 </html>
